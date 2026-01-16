@@ -224,7 +224,7 @@ Answer concisely and actionably.`;
           new import_obsidian.Notice("Question answered");
         }
       } catch (error) {
-        console.error("Kiro answer error:", error);
+        console.error("AI answer error:", error);
         const currentContent = yield this.app.vault.read(file);
         const errorContent = currentContent.replace(/> \*Thinking\.\.\.\*/, `> *Error: ${error.message}*`);
         yield this.app.vault.modify(file, errorContent);
@@ -275,12 +275,12 @@ ${content}`;
         const basename = file.basename;
         const reviewPath = `${reviewDir}/${basename}-${timestamp}.md`;
         const input = `${fullPrompt}`;
-        console.log("Executing kiro-cli, input length:", input.length);
+        console.log("Executing cli, input length:", input.length);
         console.log("Command:", `${this.settings.aiCliPath} chat --non-interactive --trust-all-tools`);
         const startTime = Date.now();
         const { stdout } = yield execAsync(`echo "${input.replace(/"/g, '\\"')}" | ${this.settings.aiCliPath} chat --non-interactive --trust-all-tools`, { maxBuffer: 10 * 1024 * 1024 });
         const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-        console.log(`Kiro-cli completed in ${duration}s, output length:`, stdout.length);
+        console.log(`cli execution completed in ${duration}s, output length:`, stdout.length);
         console.log("Cleaning output...");
         const ai_response = stdout.trim()
           .replace(/\x1b\[[0-9;]*m/g, '')

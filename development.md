@@ -37,13 +37,12 @@ The plugin provides rich context to the AI:
 ```
 obsidian-ai-assistant/
 ├── main.js              # Compiled plugin code (THIS IS WHAT RUNS)
-├── main.ts              # TypeScript source (for reference/rebuilding)
 ├── manifest.json        # Plugin metadata
 ├── data.json            # User settings storage
 ├── package.json         # Node dependencies
 ├── tsconfig.json        # TypeScript config
 ├── esbuild.config.mjs   # Build configuration
-└── llm.txt              # This file
+└── development.md       # This file
 ```
 
 ## Key Components
@@ -51,16 +50,16 @@ obsidian-ai-assistant/
 ### Settings (DEFAULT_SETTINGS)
 ```javascript
 {
-  reviewDirectory: "99-System/Archive/ai-reviews",  // Unused, legacy
-  watchedFolders: [...],                            // Unused, legacy
-  kiroCliPath: "ai-cli",                            // Path to CLI tool
+  reviewDirectory: "99-System/Archive/ai-reviews",  // Where to save AI review files
+  watchedFolders: ["04-Investigations", "08-Service", "01-Journal/Daily"], // Unused, legacy
+  aiCliPath: "",                                    // Path to CLI tool
   enableNotifications: true,                        // Show completion notices
   triggerKeyword: "ai",                             // Question trigger word
   questionSuffix: "??"                              // Question trigger suffix
 }
 ```
 
-### Main Plugin Class (KiroReviewPlugin)
+### Main Plugin Class (AIObsidianPlugin)
 - `processing`: Set to track files being processed (prevents double-processing)
 - `onload()`: Registers command and file modification listener
 - `checkForTrigger()`: Detects question patterns in modified files
@@ -77,19 +76,20 @@ obsidian-ai-assistant/
 3. Regex detects question pattern
 4. Removes `??` suffix immediately (prevents re-trigger)
 5. Adds "Thinking..." placeholder
-6. Calls CLI: `echo "{prompt}" | {cli-path} chat --non-interactive --trust-all-tools`
+6. Calls CLI: `echo "{prompt}" | {aiCliPath} chat --non-interactive --trust-all-tools`
 7. Cleans ANSI codes and formatting from output
-8. Replaces "Thinking..." with callout-formatted response
+8. Replaces "Thinking..." with horizontal rule formatted response
 
 **Hotkey Flow:**
 1. User presses hotkey
-2. Checks for `prompt.md` in current folder
-3. If missing, shows help message
-4. If found, adds "Started workflow..." status
-5. Builds full prompt with context + user prompt + file content
-6. Calls CLI tool
-7. Removes status message
-8. Adds callout-formatted response
+2. Checks if `aiCliPath` is configured, shows help message if not
+3. Checks for `prompt.md` in current folder
+4. If missing, shows help message about creating prompt.md
+5. If found, adds "Started workflow..." status
+6. Builds full prompt with context + user prompt + file content
+7. Calls CLI tool
+8. Removes status message
+9. Adds horizontal rule formatted response
 
 ## CLI Integration
 
@@ -111,23 +111,26 @@ The plugin strips:
 
 ## Response Formatting
 
-### Callout Format
+### Horizontal Rule Format
 ```markdown
-> [!ai]+ AI Assistant
-> Response line 1
-> Response line 2
+---
+**AI Assistant**
+
+Response content here
+
+---
 ```
 
 Benefits:
-- Collapsible by default (expanded with `+`)
-- Renders markdown properly
-- Visually distinct
-- Native Obsidian styling
+- Clean separation from original content
+- Markdown content renders properly
+- Visually distinct sections
+- Simple and readable format
 
 ## Making Changes
 
 ### To Change CLI Tool
-1. Update `kiroCliPath` setting in plugin settings
+1. Update `aiCliPath` setting in plugin settings
 2. Ensure tool accepts stdin and outputs to stdout
 3. Ensure tool supports `--non-interactive` and `--trust-all-tools` flags (or modify command in code)
 
@@ -175,8 +178,7 @@ Edit the prompt construction in:
 - "File modified: {path}"
 - "Question found: {question}"
 - "=== AI Assistant Workflow Started ==="
-- "Executing CLI, input length: X"
-- "CLI completed in Xs, output length: Y"
+- "Executing cli, input length: X"
 - "=== AI Assistant Workflow Completed ==="
 
 ### Common Issues
@@ -186,8 +188,8 @@ Edit the prompt construction in:
 4. **Re-triggering**: Ensure suffix is removed, check regex pattern
 
 ## Legacy/Unused Code
-- `reviewDirectory`: Originally for separate review files, now unused
-- `watchedFolders`: Originally for auto-review, now unused
+- `reviewDirectory`: Used for creating review files with timestamps, though not actively used in current workflow
+- `watchedFolders`: Originally for auto-review, now unused in current implementation
 - Can be removed in future cleanup
 
 ## Future Enhancements
