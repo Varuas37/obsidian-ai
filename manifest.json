@@ -1,0 +1,10 @@
+{
+  "id": "obsidian-ai-assistant",
+  "name": "Obsidian AI Assistant",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "AI assistant powered by your LLM choice - answer questions, review notes, and provide insights",
+  "author": "Saurav Panthee (saurav.panthee@gmail.com)",
+  "authorUrl": "",
+  "isDesktopOnly": true
+}
