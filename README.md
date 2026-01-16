@@ -69,7 +69,7 @@ echo "prompt" | your-cli chat --non-interactive --trust-all-tools
 
 ## Documentation
 
-See [llm.txt](llm.txt) for complete technical documentation and architecture details.
+See [llm.md](llm.md) for complete technical documentation and architecture details.
 
 ## License
 
