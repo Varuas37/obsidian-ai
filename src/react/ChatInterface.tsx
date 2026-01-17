@@ -162,11 +162,44 @@ export const ChatInterface: React.FC = () => {
       
       // Pass current settings to capture proper configuration snapshot
       const currentSettings = settingsManager.getSettings();
-      console.log("=== CHAT INTERFACE: Saving conversation with settings ===", {
-        aiProvider: currentSettings.aiProvider,
-        model: currentSettings.openaiModel,
-        apiType: currentSettings.openaiApiType
-      });
+      
+      // Build provider-specific settings for logging
+      const getProviderSpecificSettings = () => {
+        switch (currentSettings.aiProvider) {
+          case 'ollama':
+            return {
+              aiProvider: currentSettings.aiProvider,
+              model: currentSettings.ollamaModel,
+              url: currentSettings.ollamaUrl
+            };
+          case 'anthropic':
+            return {
+              aiProvider: currentSettings.aiProvider,
+              model: currentSettings.anthropicModel
+            };
+          case 'openai':
+            return {
+              aiProvider: currentSettings.aiProvider,
+              model: currentSettings.openaiModel,
+              apiType: currentSettings.openaiApiType,
+              baseUrl: currentSettings.apiBaseUrl
+            };
+          case 'openrouter':
+            return {
+              aiProvider: currentSettings.aiProvider,
+              model: currentSettings.openrouterModel
+            };
+          case 'cli':
+            return {
+              aiProvider: currentSettings.aiProvider,
+              cliPath: currentSettings.aiCliPath
+            };
+          default:
+            return { aiProvider: currentSettings.aiProvider };
+        }
+      };
+      
+      console.log("=== CHAT INTERFACE: Saving conversation with settings ===", getProviderSpecificSettings());
       
       const conversationId = await conversationManager.saveConversation(
         storedMessages,

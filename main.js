@@ -24830,7 +24830,7 @@ var DEFAULT_SETTINGS = {
   anthropicModel: "claude-sonnet-4-5",
   openaiModel: "gpt-4o",
   openrouterModel: "openai/gpt-4o-mini",
-  ollamaModel: "llama3.1",
+  ollamaModel: "gemma3:12b",
   apiBaseUrl: "https://api.openai.com/v1",
   openaiApiType: "responses",
   maxTokens: 4e3,
@@ -24845,7 +24845,54 @@ var DEFAULT_SETTINGS = {
 var SettingsManager = class {
   constructor(plugin) {
     this.settings = DEFAULT_SETTINGS;
+    this.changeCallbacks = /* @__PURE__ */ new Map();
     this.plugin = plugin;
+  }
+  /**
+   * Register a callback for when a specific setting changes
+   */
+  onSettingChange(key, callback) {
+    if (!this.changeCallbacks.has(key)) {
+      this.changeCallbacks.set(key, []);
+    }
+    this.changeCallbacks.get(key).push(callback);
+  }
+  /**
+   * Remove a callback for setting changes
+   */
+  offSettingChange(key, callback) {
+    const callbacks = this.changeCallbacks.get(key);
+    if (callbacks) {
+      const index2 = callbacks.indexOf(callback);
+      if (index2 > -1) {
+        callbacks.splice(index2, 1);
+      }
+    }
+  }
+  /**
+   * Notify callbacks when a setting changes
+   */
+  notifyChange(key, newValue) {
+    const specificCallbacks = this.changeCallbacks.get(key);
+    if (specificCallbacks) {
+      specificCallbacks.forEach((callback) => {
+        try {
+          callback(newValue);
+        } catch (error) {
+          console.error(`Error in setting change callback for ${String(key)}:`, error);
+        }
+      });
+    }
+    const anyCallbacks = this.changeCallbacks.get("any");
+    if (anyCallbacks) {
+      anyCallbacks.forEach((callback) => {
+        try {
+          callback(this.settings);
+        } catch (error) {
+          console.error("Error in general setting change callback:", error);
+        }
+      });
+    }
   }
   /**
    * Load settings from Obsidian's data storage
@@ -24873,7 +24920,12 @@ var SettingsManager = class {
    * Update a specific setting
    */
   async updateSetting(key, value) {
+    const oldValue = this.settings[key];
     this.settings[key] = value;
+    if (oldValue !== value) {
+      console.log(`=== SETTINGS: ${String(key)} changed from`, oldValue, "to", value);
+      this.notifyChange(key, value);
+    }
     await this.saveSettings();
   }
   /**
@@ -25726,6 +25778,8 @@ var AIService = class {
     this.app = app;
     this.settingsManager = settingsManager;
     this.currentProvider = null;
+    this.currentProviderType = null;
+    // Track which provider type we have
     this.processingFiles = /* @__PURE__ */ new Set();
     this.lastResponseId = null;
   }
@@ -25734,6 +25788,25 @@ var AIService = class {
    */
   async initialize() {
     await this.refreshProvider();
+    this.settingsManager.onSettingChange("aiProvider", (newProvider) => {
+      console.log("=== AI SERVICE: Provider setting changed, force refreshing ===");
+      console.log("New provider:", newProvider);
+      setTimeout(async () => {
+        await this.forceRefreshProvider();
+      }, 0);
+    });
+    const providerRelatedSettings = ["openaiApiType", "anthropicModel", "openaiModel", "ollamaModel", "apiBaseUrl"];
+    providerRelatedSettings.forEach((setting) => {
+      this.settingsManager.onSettingChange(setting, (newValue) => {
+        console.log(`=== AI SERVICE: Provider-related setting ${setting} changed, refreshing provider ===`);
+        console.log("New value:", newValue);
+        if (this.currentProvider) {
+          setTimeout(async () => {
+            await this.forceRefreshProvider();
+          }, 0);
+        }
+      });
+    });
   }
   /**
    * Create and return the appropriate AI provider
@@ -25776,8 +25849,25 @@ var AIService = class {
    * Refresh the current provider (useful after settings changes)
    */
   async refreshProvider() {
+    var _a;
+    const newProviderType = this.settingsManager.getSettings().aiProvider;
+    console.log("=== AI SERVICE: Refreshing provider ===");
+    console.log("Previous provider type:", this.currentProviderType);
+    console.log("New provider type:", newProviderType);
     this.currentProvider = this.createProvider();
-    console.log("AI provider refreshed:", this.settingsManager.getSettings().aiProvider);
+    this.currentProviderType = newProviderType;
+    console.log("AI provider refreshed to:", this.currentProviderType);
+    console.log("Actual provider class:", (_a = this.currentProvider) == null ? void 0 : _a.constructor.name);
+  }
+  /**
+   * Force refresh the current provider (public method for settings changes)
+   */
+  async forceRefreshProvider() {
+    console.log("=== AI SERVICE: Force refreshing provider due to external settings change ===");
+    this.currentProvider = null;
+    this.currentProviderType = null;
+    this.lastResponseId = null;
+    await this.refreshProvider();
   }
   /**
    * Ask a question through the AI provider (for chat interface)
@@ -25788,8 +25878,17 @@ var AIService = class {
     const currentSettings = this.settingsManager.getSettings();
     console.log("Provider setting:", currentSettings.aiProvider);
     console.log("Chat history length:", chatHistory.length);
-    if (!this.currentProvider) {
-      console.log("=== AI SERVICE: Creating provider (first time or after cleanup) ===");
+    const needsRefresh = !this.currentProvider || this.currentProviderType !== currentSettings.aiProvider;
+    if (needsRefresh) {
+      if (!this.currentProvider) {
+        console.log("=== AI SERVICE: Creating provider (first time or after cleanup) ===");
+      } else {
+        console.log("=== AI SERVICE: Provider type changed ===");
+        console.log("Previous provider type:", this.currentProviderType);
+        console.log("New provider type:", currentSettings.aiProvider);
+        this.lastResponseId = null;
+        console.log("=== AI SERVICE: Reset conversation chain due to provider change ===");
+      }
       await this.refreshProvider();
     }
     console.log("Current provider type:", (_a = this.currentProvider) == null ? void 0 : _a.constructor.name);
@@ -25958,6 +26057,7 @@ var AIService = class {
   cleanup() {
     this.processingFiles.clear();
     this.currentProvider = null;
+    this.currentProviderType = null;
     this.lastResponseId = null;
   }
 };
@@ -28139,9 +28239,27 @@ var AIObsidianSettingTab = class extends import_obsidian4.PluginSettingTab {
       new import_obsidian4.Setting(containerEl).setName("Ollama URL").setDesc("URL where Ollama is running").addText((text5) => text5.setPlaceholder("http://localhost:11434").setValue(settings.ollamaUrl).onChange(async (value) => {
         await this.settingsManager.updateSetting("ollamaUrl", value);
       }));
-      new import_obsidian4.Setting(containerEl).setName("Ollama Model").setDesc("Local AI model to use (must be pulled first)").addDropdown((dropdown) => dropdown.addOption("llama3.1", "Llama 3.1 (8B)").addOption("llama3.1:70b", "Llama 3.1 (70B)").addOption("llama2", "Llama 2 (7B)").addOption("codellama", "Code Llama").addOption("mistral", "Mistral 7B").addOption("phi3", "Phi-3 Mini").addOption("gemma2", "Gemma 2").setValue(settings.ollamaModel).onChange(async (value) => {
+      new import_obsidian4.Setting(containerEl).setName("Ollama Model").setDesc("Enter the exact model name you have installed (e.g., gemma2:12b, llama3.1, mistral, etc.)").addText((text5) => text5.setPlaceholder("gemma3:12b").setValue(settings.ollamaModel).onChange(async (value) => {
         await this.settingsManager.updateSetting("ollamaModel", value);
       }));
+      const helpEl = containerEl.createEl("div", {
+        cls: "setting-item-description",
+        attr: { style: "margin-top: 8px; padding: 20px; background: var(--background-secondary); border-radius: 6px; font-size: 0.9em; color: var(--text-muted); border-left: 3px solid var(--interactive-accent);" }
+      });
+      helpEl.innerHTML = `
+        <div style="margin-bottom: 12px; font-weight: 500; color: var(--text-normal);">Popular models:</div>
+        <div style="margin-left: 12px; line-height: 1.4;">
+          <div>\u2022 <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">gemma2:12b</code> - Gemma 3 12B</div>
+          <div>\u2022 <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">llama3.1</code> - Llama 3.1 8B</div>
+          <div>\u2022 <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">llama3.1:70b</code> - Llama 3.1 70B</div>
+          <div>\u2022 <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">codellama</code> - Code Llama</div>
+          <div>\u2022 <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">mistral</code> - Mistral 7B</div>
+          <div>\u2022 <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">phi3</code> - Phi-3 Mini</div>
+        </div>
+        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--background-modifier-border); font-style: italic;">
+          Run <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">ollama list</code> to see your installed models.
+        </div>
+      `;
     }
     if (["anthropic", "openai", "openrouter"].includes(settings.aiProvider)) {
       new import_obsidian4.Setting(containerEl).setName("Max Tokens").setDesc("Maximum tokens for API responses").addText((text5) => text5.setPlaceholder("4000").setValue(settings.maxTokens.toString()).onChange(async (value) => {
@@ -41018,11 +41136,41 @@ var ChatInterface = () => {
       if (storedMessages.length === 0)
         return;
       const currentSettings = settingsManager.getSettings();
-      console.log("=== CHAT INTERFACE: Saving conversation with settings ===", {
-        aiProvider: currentSettings.aiProvider,
-        model: currentSettings.openaiModel,
-        apiType: currentSettings.openaiApiType
-      });
+      const getProviderSpecificSettings = () => {
+        switch (currentSettings.aiProvider) {
+          case "ollama":
+            return {
+              aiProvider: currentSettings.aiProvider,
+              model: currentSettings.ollamaModel,
+              url: currentSettings.ollamaUrl
+            };
+          case "anthropic":
+            return {
+              aiProvider: currentSettings.aiProvider,
+              model: currentSettings.anthropicModel
+            };
+          case "openai":
+            return {
+              aiProvider: currentSettings.aiProvider,
+              model: currentSettings.openaiModel,
+              apiType: currentSettings.openaiApiType,
+              baseUrl: currentSettings.apiBaseUrl
+            };
+          case "openrouter":
+            return {
+              aiProvider: currentSettings.aiProvider,
+              model: currentSettings.openrouterModel
+            };
+          case "cli":
+            return {
+              aiProvider: currentSettings.aiProvider,
+              cliPath: currentSettings.aiCliPath
+            };
+          default:
+            return { aiProvider: currentSettings.aiProvider };
+        }
+      };
+      console.log("=== CHAT INTERFACE: Saving conversation with settings ===", getProviderSpecificSettings());
       const conversationId = await conversationManager.saveConversation(
         storedMessages,
         currentConversationId || void 0,

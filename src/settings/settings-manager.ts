@@ -50,7 +50,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   anthropicModel: "claude-sonnet-4-5",
   openaiModel: "gpt-4o",
   openrouterModel: "openai/gpt-4o-mini",
-  ollamaModel: "llama3.1",
+  ollamaModel: "gemma3:12b",
   apiBaseUrl: "https://api.openai.com/v1",
   openaiApiType: "responses",
   maxTokens: 4000,
@@ -64,9 +64,68 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 export class SettingsManager {
   private plugin: any;
   private settings: PluginSettings = DEFAULT_SETTINGS;
+  private changeCallbacks: Map<keyof PluginSettings | 'any', Array<(value: any) => void>> = new Map();
 
   constructor(plugin: any) {
     this.plugin = plugin;
+  }
+
+  /**
+   * Register a callback for when a specific setting changes
+   */
+  onSettingChange<K extends keyof PluginSettings>(
+    key: K | 'any',
+    callback: (value: PluginSettings[K] | PluginSettings) => void
+  ): void {
+    if (!this.changeCallbacks.has(key)) {
+      this.changeCallbacks.set(key, []);
+    }
+    this.changeCallbacks.get(key)!.push(callback as any);
+  }
+
+  /**
+   * Remove a callback for setting changes
+   */
+  offSettingChange<K extends keyof PluginSettings>(
+    key: K | 'any',
+    callback: (value: any) => void
+  ): void {
+    const callbacks = this.changeCallbacks.get(key);
+    if (callbacks) {
+      const index = callbacks.indexOf(callback);
+      if (index > -1) {
+        callbacks.splice(index, 1);
+      }
+    }
+  }
+
+  /**
+   * Notify callbacks when a setting changes
+   */
+  private notifyChange<K extends keyof PluginSettings>(key: K, newValue: PluginSettings[K]): void {
+    // Notify specific setting callbacks
+    const specificCallbacks = this.changeCallbacks.get(key);
+    if (specificCallbacks) {
+      specificCallbacks.forEach(callback => {
+        try {
+          callback(newValue);
+        } catch (error) {
+          console.error(`Error in setting change callback for ${String(key)}:`, error);
+        }
+      });
+    }
+
+    // Notify 'any' callbacks with full settings object
+    const anyCallbacks = this.changeCallbacks.get('any');
+    if (anyCallbacks) {
+      anyCallbacks.forEach(callback => {
+        try {
+          callback(this.settings);
+        } catch (error) {
+          console.error('Error in general setting change callback:', error);
+        }
+      });
+    }
   }
 
   /**
@@ -98,10 +157,18 @@ export class SettingsManager {
    * Update a specific setting
    */
   async updateSetting<K extends keyof PluginSettings>(
-    key: K, 
+    key: K,
     value: PluginSettings[K]
   ): Promise<void> {
+    const oldValue = this.settings[key];
     this.settings[key] = value;
+    
+    // Only notify if the value actually changed
+    if (oldValue !== value) {
+      console.log(`=== SETTINGS: ${String(key)} changed from`, oldValue, 'to', value);
+      this.notifyChange(key, value);
+    }
+    
     await this.saveSettings();
   }
 

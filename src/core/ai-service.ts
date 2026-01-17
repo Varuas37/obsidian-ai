@@ -17,6 +17,7 @@ import {
 
 export class AIService {
   private currentProvider: AIProvider | null = null;
+  private currentProviderType: string | null = null; // Track which provider type we have
   private processingFiles = new Set<string>();
   private lastResponseId: string | null = null; // Track response ID for conversation chaining
 
@@ -30,6 +31,32 @@ export class AIService {
    */
   async initialize(): Promise<void> {
     await this.refreshProvider();
+    
+    // Listen for provider changes and automatically refresh
+    this.settingsManager.onSettingChange('aiProvider', (newProvider) => {
+      console.log("=== AI SERVICE: Provider setting changed, force refreshing ===");
+      console.log("New provider:", newProvider);
+      // Use setTimeout to make it async without breaking the callback signature
+      setTimeout(async () => {
+        await this.forceRefreshProvider();
+      }, 0);
+    });
+    
+    // Also listen for other provider-related settings that might affect the current provider
+    const providerRelatedSettings = ['openaiApiType', 'anthropicModel', 'openaiModel', 'ollamaModel', 'apiBaseUrl'] as const;
+    providerRelatedSettings.forEach(setting => {
+      this.settingsManager.onSettingChange(setting, (newValue) => {
+        console.log(`=== AI SERVICE: Provider-related setting ${setting} changed, refreshing provider ===`);
+        console.log("New value:", newValue);
+        // Only force refresh if we already have a provider (don't create unnecessarily)
+        if (this.currentProvider) {
+          // Use setTimeout to make it async without breaking the callback signature
+          setTimeout(async () => {
+            await this.forceRefreshProvider();
+          }, 0);
+        }
+      });
+    });
   }
 
   /**
@@ -77,8 +104,26 @@ export class AIService {
    * Refresh the current provider (useful after settings changes)
    */
   async refreshProvider(): Promise<void> {
+    const newProviderType = this.settingsManager.getSettings().aiProvider;
+    console.log("=== AI SERVICE: Refreshing provider ===");
+    console.log("Previous provider type:", this.currentProviderType);
+    console.log("New provider type:", newProviderType);
+    
     this.currentProvider = this.createProvider();
-    console.log("AI provider refreshed:", this.settingsManager.getSettings().aiProvider);
+    this.currentProviderType = newProviderType;
+    console.log("AI provider refreshed to:", this.currentProviderType);
+    console.log("Actual provider class:", this.currentProvider?.constructor.name);
+  }
+
+  /**
+   * Force refresh the current provider (public method for settings changes)
+   */
+  async forceRefreshProvider(): Promise<void> {
+    console.log("=== AI SERVICE: Force refreshing provider due to external settings change ===");
+    this.currentProvider = null;
+    this.currentProviderType = null;
+    this.lastResponseId = null; // Reset conversation chain on forced refresh
+    await this.refreshProvider();
   }
 
   /**
@@ -90,9 +135,20 @@ export class AIService {
     console.log("Provider setting:", currentSettings.aiProvider);
     console.log("Chat history length:", chatHistory.length);
     
-    // Only refresh provider if we don't have one or if settings changed
-    if (!this.currentProvider) {
-      console.log("=== AI SERVICE: Creating provider (first time or after cleanup) ===");
+    // Check if we need to refresh provider (first time, after cleanup, or settings changed)
+    const needsRefresh = !this.currentProvider || this.currentProviderType !== currentSettings.aiProvider;
+    
+    if (needsRefresh) {
+      if (!this.currentProvider) {
+        console.log("=== AI SERVICE: Creating provider (first time or after cleanup) ===");
+      } else {
+        console.log("=== AI SERVICE: Provider type changed ===");
+        console.log("Previous provider type:", this.currentProviderType);
+        console.log("New provider type:", currentSettings.aiProvider);
+        // Reset conversation chain when switching providers to avoid cross-provider issues
+        this.lastResponseId = null;
+        console.log("=== AI SERVICE: Reset conversation chain due to provider change ===");
+      }
       await this.refreshProvider();
     }
     
@@ -287,6 +343,7 @@ export class AIService {
   cleanup(): void {
     this.processingFiles.clear();
     this.currentProvider = null;
+    this.currentProviderType = null;
     this.lastResponseId = null;
   }
 }

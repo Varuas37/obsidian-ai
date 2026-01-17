@@ -212,19 +212,33 @@ export class AIObsidianSettingTab extends PluginSettingTab {
 
       new Setting(containerEl)
         .setName("Ollama Model")
-        .setDesc("Local AI model to use (must be pulled first)")
-        .addDropdown((dropdown) => dropdown
-          .addOption("llama3.1", "Llama 3.1 (8B)")
-          .addOption("llama3.1:70b", "Llama 3.1 (70B)")
-          .addOption("llama2", "Llama 2 (7B)")
-          .addOption("codellama", "Code Llama")
-          .addOption("mistral", "Mistral 7B")
-          .addOption("phi3", "Phi-3 Mini")
-          .addOption("gemma2", "Gemma 2")
+        .setDesc("Enter the exact model name you have installed (e.g., gemma2:12b, llama3.1, mistral, etc.)")
+        .addText((text) => text
+          .setPlaceholder("gemma3:12b")
           .setValue(settings.ollamaModel)
           .onChange(async (value) => {
             await this.settingsManager.updateSetting('ollamaModel', value);
           }));
+
+      // Add helpful note about available models
+      const helpEl = containerEl.createEl("div", {
+        cls: "setting-item-description",
+        attr: { style: "margin-top: 8px; padding: 20px; background: var(--background-secondary); border-radius: 6px; font-size: 0.9em; color: var(--text-muted); border-left: 3px solid var(--interactive-accent);" }
+      });
+      helpEl.innerHTML = `
+        <div style="margin-bottom: 12px; font-weight: 500; color: var(--text-normal);">Popular models:</div>
+        <div style="margin-left: 12px; line-height: 1.4;">
+          <div>• <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">gemma3:12b</code> - Gemma 3 12B</div>
+          <div>• <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">llama3.1</code> - Llama 3.1 8B</div>
+          <div>• <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">llama3.1:70b</code> - Llama 3.1 70B</div>
+          <div>• <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">codellama</code> - Code Llama</div>
+          <div>• <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">mistral</code> - Mistral 7B</div>
+          <div>• <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">phi3</code> - Phi-3 Mini</div>
+        </div>
+        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--background-modifier-border); font-style: italic;">
+          Run <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">ollama list</code> to see your installed models.
+        </div>
+      `;
 
     }
 
