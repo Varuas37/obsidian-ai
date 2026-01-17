@@ -26896,6 +26896,7 @@ var StylesManager = class {
       .gap-1 { gap: 0.25rem !important; }
       .gap-2 { gap: 0.5rem !important; }
       .gap-3 { gap: 0.75rem !important; }
+      .gap-4 { gap: 1rem !important; }
       .p-1\\.5 { padding: 0.375rem !important; }
       .p-2 { padding: 0.5rem !important; }
       .p-3 { padding: 0.75rem !important; }
@@ -26903,14 +26904,23 @@ var StylesManager = class {
       .px-2 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
       .px-3 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
       .px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
+      .py-1 { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
+      .py-2 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
       .py-2\\.5 { padding-top: 0.625rem !important; padding-bottom: 0.625rem !important; }
       .py-3 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+      .pl-4 { padding-left: 1rem !important; }
+      .pr-4 { padding-right: 1rem !important; }
       .pr-12 { padding-right: 3rem !important; }
+      .pr-14 { padding-right: 3.5rem !important; }
       .mt-1 { margin-top: 0.25rem !important; }
+      .mb-1 { margin-bottom: 0.25rem !important; }
       .mb-4 { margin-bottom: 1rem !important; }
       
       /* Sizing utilities with !important */
       .max-w-\\[80\\%\\] { max-width: 80% !important; }
+      .min-w-0 { min-width: 0 !important; }
+      .h-8 { height: 2rem !important; }
+      .w-8 { width: 2rem !important; }
       .h-10 { height: 2.5rem !important; }
       .w-10 { width: 2.5rem !important; }
       .h-16 { height: 4rem !important; }
@@ -26963,10 +26973,35 @@ var StylesManager = class {
       .right-2 { right: 0.5rem !important; }
       .bottom-1\\.5 { bottom: 0.375rem !important; }
       
+      /* Transform utilities with !important */
+      .-translate-y-1\\/2 { transform: translateY(-50%) !important; }
+      .top-1\\/2 { top: 50% !important; }
+      .right-1\\.5 { right: 0.375rem !important; }
+      
+      /* Background utilities with !important */
+      .bg-gray-50 { background-color: var(--background-secondary) !important; }
+      .bg-gray-300 { background-color: var(--background-modifier-border) !important; }
+      .bg-gray-600 { background-color: var(--background-modifier-border) !important; }
+      
+      /* Text color utilities with !important */
+      .text-gray-400 { color: var(--text-muted) !important; }
+      .text-gray-500 { color: var(--text-muted) !important; }
+      .text-gray-800 { color: var(--text-normal) !important; }
+      .text-gray-900 { color: var(--text-normal) !important; }
+      
+      /* Cursor utilities */
+      .cursor-not-allowed { cursor: not-allowed !important; }
+      
+      /* Hover utilities with !important */
+      .hover\\:bg-gray-50:hover { background-color: var(--background-modifier-hover) !important; }
+      .hover\\:bg-gray-800:hover { background-color: var(--background-modifier-hover) !important; }
+      .hover\\:scale-105:hover { transform: scale(1.05) !important; }
+      
       /* Other utilities with !important */
       .backdrop-blur-xl { backdrop-filter: blur(24px) !important; }
       .resize-none { resize: none !important; }
       .transition-all { transition-property: all !important; }
+      .transition-colors { transition-property: color, background-color, border-color !important; }
       .duration-200 { transition-duration: 200ms !important; }
       
       /* Focus utilities with !important */
@@ -27239,6 +27274,56 @@ var ContextProviders = ({
 // src/react/ChatInterface.tsx
 var import_react3 = __toESM(require_react());
 
+// src/react/utils/AvatarGenerator.ts
+var AvatarGenerator = class {
+  /**
+   * Generate a consistent avatar for a given identifier
+   */
+  static generateAvatar(identifier, name) {
+    if (this.avatarCache.has(identifier)) {
+      return this.avatarCache.get(identifier);
+    }
+    const hash = this.hashString(identifier);
+    const colorIndex = hash % this.colors.length;
+    const color = this.colors[colorIndex];
+    const initials = name ? name.split(" ").map((word) => word.charAt(0)).join("").slice(0, 2).toUpperCase() : identifier.slice(0, 2).toUpperCase();
+    const avatar = { color, initials };
+    this.avatarCache.set(identifier, avatar);
+    return avatar;
+  }
+  /**
+   * Simple string hash function for consistent color selection
+   */
+  static hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash);
+  }
+  /**
+   * Clear avatar cache (useful for testing)
+   */
+  static clearCache() {
+    this.avatarCache.clear();
+  }
+};
+AvatarGenerator.colors = [
+  "#FF6B6B",
+  "#4ECDC4",
+  "#45B7D1",
+  "#96CEB4",
+  "#FECA57",
+  "#FF9FF3",
+  "#54A0FF",
+  "#5F27CD",
+  "#00D2D3",
+  "#FF9F43"
+];
+AvatarGenerator.avatarCache = /* @__PURE__ */ new Map();
+
 // src/react/themed-components/ChatBubble.tsx
 var import_jsx_runtime2 = __toESM(require_jsx_runtime());
 function cn(...classes) {
@@ -27283,14 +27368,24 @@ function ChatBubble({ message, isUser, timestamp, theme }) {
     ] });
   }
   if (theme === "discord") {
-    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "flex gap-3 py-1", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm", children: isUser ? "Y" : "AI" }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "flex-1", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "flex items-baseline gap-2 mb-1", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "font-medium text-gray-900 dark:text-gray-100 text-sm", children: isUser ? "You" : "AI Assistant" }),
-          timestamp && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "text-xs text-gray-500", children: timestamp })
+    const userAvatar = AvatarGenerator.generateAvatar("user", "You");
+    const aiAvatar = AvatarGenerator.generateAvatar("ai-assistant", "AI Assistant");
+    const avatar = isUser ? userAvatar : aiAvatar;
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "flex gap-4 py-2 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded-md", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+        "div",
+        {
+          className: "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm",
+          style: { backgroundColor: avatar.color },
+          children: avatar.initials
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "flex-1 min-w-0", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "flex items-baseline gap-3 mb-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "font-semibold text-gray-900 dark:text-gray-100 text-sm", children: isUser ? "You" : "AI Assistant" }),
+          timestamp && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "text-xs text-gray-500 dark:text-gray-400 font-medium", children: timestamp })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "text-gray-800 dark:text-gray-200 text-sm leading-relaxed", children: message })
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "text-gray-800 dark:text-gray-200 text-sm leading-relaxed pr-4", children: message })
       ] })
     ] });
   }
@@ -27417,7 +27512,7 @@ function ChatInput({ onSend, placeholder = "Ask me anything...", disabled, theme
     ] });
   }
   if (theme === "imessage") {
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "flex items-end gap-2 p-3 border-t border-border bg-background/80 backdrop-blur-xl", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "relative flex-1", children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "flex items-end gap-3 p-4 border-t border-border bg-background/80 backdrop-blur-xl", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "relative flex-1 min-h-[42px]", children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
         "textarea",
         {
@@ -27428,19 +27523,20 @@ function ChatInput({ onSend, placeholder = "Ask me anything...", disabled, theme
           disabled,
           rows: 1,
           className: cn2(
-            "w-full resize-none rounded-full border border-border bg-muted/50 px-4 py-2.5 pr-12",
-            "text-[15px] placeholder:text-muted-foreground",
+            "w-full resize-none rounded-full border border-border bg-muted/50 pl-4 pr-14 py-3",
+            "text-[15px] placeholder:text-muted-foreground leading-relaxed",
             "focus:outline-none focus:ring-2 focus:ring-[#007AFF]/50 focus:border-[#007AFF]",
             "max-h-32 min-h-[42px]",
             "transition-all duration-200"
           ),
           style: {
             height: "auto",
-            minHeight: "42px"
+            minHeight: "42px",
+            lineHeight: "1.4"
           },
           onInput: (e) => {
             const target = e.target;
-            target.style.height = "auto";
+            target.style.height = "42px";
             target.style.height = `${Math.min(target.scrollHeight, 128)}px`;
           }
         }
@@ -27451,10 +27547,14 @@ function ChatInput({ onSend, placeholder = "Ask me anything...", disabled, theme
           onClick: handleSend,
           disabled: !message.trim() || disabled,
           className: cn2(
-            "absolute right-2 bottom-1.5 p-1.5 rounded-full transition-all duration-200",
-            message.trim() ? "bg-[#007AFF] text-white hover:bg-[#0066CC]" : "bg-muted text-muted-foreground"
+            "absolute right-2 w-8 h-8 rounded-full transition-all duration-200 flex items-center justify-center",
+            message.trim() && !disabled ? "bg-[#007AFF] text-white hover:bg-[#0066CC] hover:scale-105" : "bg-gray-300 dark:bg-gray-600 text-gray-500 cursor-not-allowed"
           ),
-          children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
+          style: {
+            top: "50%",
+            transform: "translateY(-50%)"
+          },
+          children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", strokeWidth: 2, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
         }
       )
     ] }) });
