@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { useAIService, useSettings } from './context';
-import { ChatBubble } from './themed-components/ChatBubble';
-import { ChatHeader } from './themed-components/ChatHeader';
-import { ChatInput } from './themed-components/ChatInput';
+import { ThemeProvider, ThemeName } from './themes';
 
 interface Message {
   id: string;
@@ -173,14 +171,15 @@ export const ChatInterface: React.FC = () => {
   };
 
   const settings = settingsManager.getSettings();
+  const themeProvider = ThemeProvider.getInstance();
+  const themeComponents = themeProvider.getComponents(currentTheme as ThemeName);
 
   return (
     <div className={currentTheme === 'default' ? 'ai-chat-container' : `ai-chat-container-${currentTheme}`}>
-      <ChatHeader
+      <themeComponents.Header
         name="AI Assistant"
         status={`Using: ${getProviderDisplayName(settings.aiProvider)}`}
         onClear={clearChat}
-        theme={currentTheme as any}
       />
       
       <div className={currentTheme === 'default' ? 'ai-chat-messages' : `ai-chat-messages-${currentTheme}`}>
@@ -194,23 +193,21 @@ export const ChatInterface: React.FC = () => {
           </div>
         ) : (
           messages.map((message) => (
-            <ChatBubble
+            <themeComponents.Bubble
               key={message.id}
               message={message.isThinking ? 'Thinking...' : message.content}
               isUser={message.type === 'user'}
               timestamp={message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              theme={currentTheme as any}
             />
           ))
         )}
         <div ref={messagesEndRef} />
       </div>
       
-      <ChatInput
+      <themeComponents.Input
         onSend={handleSendMessage}
         placeholder="Ask me anything..."
         disabled={isProcessing}
-        theme={currentTheme as any}
       />
     </div>
   );

@@ -32,17 +32,44 @@ This is an **Obsidian AI Assistant plugin** that integrates AI capabilities dire
 src/
 ├── main.ts                    # Plugin orchestrator (dependency injection)
 ├── core/                      # Business logic
-│   ├── ai-service.ts          # AI operations coordinator  
+│   ├── ai-service.ts          # AI operations coordinator
 │   └── ai-providers.ts        # All 5 provider implementations
 ├── react/                     # React UI
 │   ├── context.tsx            # React contexts (useAIService, useSettings, useApp)
-│   └── ChatInterface.tsx      # Main chat component with history
+│   ├── ChatInterface.tsx      # Main chat component with ThemeProvider integration
+│   ├── themes/                # Centralized theme system (SOLID architecture)
+│   │   ├── types.ts           # Theme interfaces and contracts
+│   │   ├── ThemeProvider.ts   # Factory pattern theme manager
+│   │   ├── index.ts           # Central theme exports
+│   │   ├── default/           # Default Obsidian theme
+│   │   │   ├── Bubble.tsx     # Message bubble component
+│   │   │   ├── Header.tsx     # Header component
+│   │   │   ├── Input.tsx      # Input component
+│   │   │   └── index.ts       # Theme configuration
+│   │   ├── imessage/          # iOS Messages theme
+│   │   │   ├── Bubble.tsx     # iOS-style bubbles
+│   │   │   ├── Header.tsx     # iOS-style header
+│   │   │   ├── Input.tsx      # iOS-style input
+│   │   │   └── index.ts       # Theme configuration
+│   │   ├── discord/           # Discord-style theme
+│   │   │   ├── Bubble.tsx     # Discord bubbles with avatars
+│   │   │   ├── Header.tsx     # Discord-style header
+│   │   │   ├── Input.tsx      # Discord-style input
+│   │   │   └── index.ts       # Theme configuration
+│   │   └── minimal/           # Minimal clean theme
+│   │       ├── Bubble.tsx     # Minimal bubbles
+│   │       ├── Header.tsx     # Minimal header
+│   │       ├── Input.tsx      # Minimal input
+│   │       └── index.ts       # Theme configuration
+│   ├── themed-components/     # Legacy theme components (deprecated)
+│   └── utils/                 # React utilities
+│       └── AvatarGenerator.ts # Random avatar generation system
 ├── ui/                        # UI management
 │   ├── react-chat-view.tsx    # Obsidian ItemView wrapper for React
-│   └── styles-manager.ts      # Professional CSS styling
+│   └── styles-manager.ts      # Professional CSS styling + theme system
 ├── settings/                  # Configuration
-│   ├── settings-manager.ts    # Type-safe settings with validation
-│   └── settings-tab.ts        # Complete settings UI
+│   ├── settings-manager.ts    # Type-safe settings with theme support
+│   └── settings-tab.ts        # Complete settings UI with theme selector
 ├── files/                     # File operations
 │   └── file-handler.ts        # File triggers, inline questions
 └── commands/                  # Commands
@@ -166,7 +193,90 @@ async handleMyNewCommand(): Promise<void> {
 }
 ```
 
-### **4. Adding New File Operations**
+### **4. Adding New Chat Themes (SOLID Architecture)**
+
+**Step 1**: Create theme folder structure in [`src/react/themes/mynewtheme/`](src/react/themes/)
+```
+mynewtheme/
+├── Bubble.tsx    # Message bubble component
+├── Header.tsx    # Header component
+├── Input.tsx     # Input component
+└── index.ts      # Theme configuration
+```
+
+**Step 2**: Create theme components following interface contracts
+```typescript
+// mynewtheme/Bubble.tsx
+import React from 'react';
+import { ChatBubbleProps } from '../types';
+
+export function MyNewThemeBubble({ message, isUser, timestamp }: ChatBubbleProps) {
+  return (
+    <div className="your-bubble-styling">
+      {message}
+    </div>
+  );
+}
+
+// mynewtheme/Header.tsx
+import React from 'react';
+import { ChatHeaderProps } from '../types';
+
+export function MyNewThemeHeader({ name, status, onClear }: ChatHeaderProps) {
+  return (
+    <div className="your-header-styling">
+      <span>{name}</span>
+      {onClear && <button onClick={onClear}>Clear</button>}
+    </div>
+  );
+}
+
+// mynewtheme/Input.tsx
+import React, { useState } from 'react';
+import { ChatInputProps } from '../types';
+
+export function MyNewThemeInput({ onSend, placeholder, disabled }: ChatInputProps) {
+  const [message, setMessage] = useState("");
+  // Implementation...
+}
+```
+
+**Step 3**: Configure theme in [`mynewtheme/index.ts`](src/react/themes/)
+```typescript
+import { ThemeConfig } from '../types';
+import { MyNewThemeBubble } from './Bubble';
+import { MyNewThemeHeader } from './Header';
+import { MyNewThemeInput } from './Input';
+
+export const mynewTheme: ThemeConfig = {
+  name: 'mynewtheme',
+  displayName: 'My New Theme',
+  description: 'Custom theme description',
+  components: {
+    Bubble: MyNewThemeBubble,
+    Header: MyNewThemeHeader,
+    Input: MyNewThemeInput
+  }
+};
+```
+
+**Step 4**: Register theme in [`ThemeProvider.ts`](src/react/themes/ThemeProvider.ts)
+```typescript
+import { mynewTheme } from './mynewtheme';
+
+// Add to themes registry in constructor
+this.themes = {
+  // ... existing themes
+  mynewtheme: mynewTheme
+};
+```
+
+**Step 5**: Add settings and validation
+```typescript
+// Update PluginSettings interface and validation as before
+```
+
+### **5. Adding New File Operations**
 
 **Add to** [`file-handler.ts`](src/files/file-handler.ts)
 ```typescript
@@ -180,17 +290,27 @@ async myNewFileOperation(file: TFile): Promise<void> {
 
 ## 🎨 UI Development
 
+### **Theme System Architecture**
+- **Four Available Themes**: Default (Obsidian), iMessage (iOS), Minimal (Clean), Discord (Chat App)
+- **Theme Components**: Modular components in [`src/react/themed-components/`](src/react/themed-components/)
+- **Avatar System**: Random avatar generation in [`AvatarGenerator.ts`](src/react/utils/AvatarGenerator.ts)
+- **Utility Classes**: 120+ Tailwind-like classes with `!important` overrides
+- **Theme Switching**: Instant updates via Settings → Interface Settings → Chat theme
+
 ### **Styling System**
 - **CSS Classes**: Managed in [`styles-manager.ts`](src/ui/styles-manager.ts)
 - **Theme Variables**: Use `var(--obsidian-css-vars)` for theme compatibility
+- **Utility System**: Complete Tailwind-like utility classes for themed components
+- **CSS Specificity**: Uses `!important` declarations to override Obsidian's default styles
 - **Responsive**: Mobile-friendly designs
 - **Animations**: Smooth transitions and loading states
 
 ### **React Patterns Used**
 - **Context Hooks**: `useAIService()`, `useSettings()`, `useApp()`
-- **State Management**: `useState` for local state
-- **Effects**: `useEffect` for lifecycle management
+- **State Management**: `useState` for local state and theme tracking
+- **Effects**: `useEffect` for lifecycle management and theme changes
 - **Refs**: `useRef` for DOM access
+- **Component Patterns**: Strategy pattern for theme-aware components
 
 ## 🔍 Important Implementation Details
 

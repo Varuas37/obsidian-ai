@@ -21,13 +21,40 @@ obsidian-ai-assistant/
 │   │   └── ai-providers.ts          # All provider implementations
 │   ├── react/                       # React components
 │   │   ├── context.tsx              # React contexts & hooks
-│   │   └── ChatInterface.tsx        # Main chat component
+│   │   ├── ChatInterface.tsx        # Main chat component with ThemeProvider
+│   │   ├── themes/                  # SOLID-compliant theme system
+│   │   │   ├── types.ts             # Theme interfaces and contracts
+│   │   │   ├── ThemeProvider.ts     # Factory pattern theme manager
+│   │   │   ├── index.ts             # Central theme exports
+│   │   │   ├── default/             # Default Obsidian theme
+│   │   │   │   ├── Bubble.tsx       # Message bubble component
+│   │   │   │   ├── Header.tsx       # Header component
+│   │   │   │   ├── Input.tsx        # Input component
+│   │   │   │   └── index.ts         # Theme configuration
+│   │   │   ├── imessage/            # iOS Messages theme
+│   │   │   │   ├── Bubble.tsx       # iOS-style bubbles
+│   │   │   │   ├── Header.tsx       # iOS-style header
+│   │   │   │   ├── Input.tsx        # iOS-style input
+│   │   │   │   └── index.ts         # Theme configuration
+│   │   │   ├── discord/             # Discord-style theme
+│   │   │   │   ├── Bubble.tsx       # Discord bubbles with avatars
+│   │   │   │   ├── Header.tsx       # Discord-style header
+│   │   │   │   ├── Input.tsx        # Discord-style input
+│   │   │   │   └── index.ts         # Theme configuration
+│   │   │   └── minimal/             # Minimal clean theme
+│   │   │       ├── Bubble.tsx       # Minimal bubbles
+│   │   │       ├── Header.tsx       # Minimal header
+│   │   │       ├── Input.tsx        # Minimal input
+│   │   │       └── index.ts         # Theme configuration
+│   │   ├── themed-components/       # Legacy theme components (deprecated)
+│   │   └── utils/                   # React utilities
+│   │       └── AvatarGenerator.ts   # Random avatar generation system
 │   ├── ui/                          # UI management
 │   │   ├── react-chat-view.tsx      # Obsidian view wrapper
-│   │   └── styles-manager.ts        # Beautiful CSS styling
+│   │   └── styles-manager.ts        # CSS styling + theme system
 │   ├── settings/                    # Configuration
-│   │   ├── settings-manager.ts      # Settings business logic
-│   │   └── settings-tab.ts          # Settings UI
+│   │   ├── settings-manager.ts      # Settings with theme support
+│   │   └── settings-tab.ts          # Settings UI with theme selector
 │   ├── files/                       # File operations
 │   │   └── file-handler.ts          # File triggers & workflows
 │   └── commands/                    # Commands
@@ -137,18 +164,50 @@ interface PluginSettings {
 
 ## 🎨 UI Architecture
 
-### **Beautiful Styling System** ([`styles-manager.ts`](src/ui/styles-manager.ts))
-- **Modular CSS**: Separate style modules
-- **Theme Support**: Dark/light mode compatibility  
-- **Responsive Design**: Mobile-friendly layouts
-- **Animations**: Smooth transitions and loading states
-- **Professional Design**: Modern chat interface
+### **SOLID-Compliant Theme System** ([`src/react/themes/`](src/react/themes/))
+- **Factory Pattern**: [`ThemeProvider.ts`](src/react/themes/ThemeProvider.ts) manages theme creation and selection
+- **Interface Segregation**: Clean [`types.ts`](src/react/themes/types.ts) interfaces for theme contracts
+- **Single Responsibility**: Each theme folder contains focused components (Bubble, Header, Input)
+- **Open/Closed Principle**: Easy to add new themes without modifying existing code
+- **Dependency Inversion**: Components depend on abstractions, not implementations
 
-### **React Integration**
-- **TypeScript Components**: Type-safe React components
-- **Context API**: Clean dependency injection
-- **Hooks**: Modern React patterns
-- **State Management**: React hooks for UI state
+### **Theme Architecture Structure**
+```typescript
+// Each theme follows the same structure
+src/react/themes/
+├── ThemeProvider.ts     # Factory pattern manager
+├── types.ts             # Theme interfaces
+├── default/             # Obsidian native theme
+│   ├── Bubble.tsx       # Message bubbles
+│   ├── Header.tsx       # Chat header
+│   ├── Input.tsx        # Message input
+│   └── index.ts         # Theme configuration
+├── imessage/           # iOS Messages theme
+├── discord/            # Discord-style theme
+└── minimal/            # Minimal clean theme
+```
+
+### **Advanced Theme System Features**
+- **Four Chat Themes**: Default (Obsidian), Message (iOS), Minimal (Clean), Discord (Chat App)
+- **Component Replacement**: Entire UI sections can be swapped based on theme selection
+- **Avatar Generation**: Random colorful avatars via [`AvatarGenerator.ts`](src/react/utils/AvatarGenerator.ts)
+- **Utility Classes**: 120+ Tailwind-like CSS utilities with `!important` overrides
+- **Instant Switching**: Real-time theme changes via settings
+- **CSS Override System**: Forceful styling that works in Obsidian's environment
+
+### **Beautiful Styling System**
+- **Modular CSS**: Separate style modules with theme-specific overrides
+- **Theme Variables**: Uses `var(--obsidian-css-vars)` for seamless integration
+- **Responsive Design**: Mobile-friendly layouts across all themes
+- **Animations**: Smooth transitions and loading states
+- **Professional Design**: Modern chat interface matching popular platforms
+
+### **React Integration with Theme Support**
+- **TypeScript Components**: Type-safe React components implementing theme interfaces
+- **Context API**: Clean dependency injection for theme state
+- **Hooks**: Modern React patterns with `useState` for theme tracking
+- **State Management**: React hooks for UI state and theme switching
+- **Factory Pattern**: ThemeProvider creates appropriate components dynamically
 
 ## 🔧 Key Features
 
@@ -274,13 +333,16 @@ console.log("=== REACT CHAT: Starting message send ===");
 ### **Fully Implemented**
 - ✅ TypeScript + React architecture
 - ✅ 5 AI providers with full CLI support
-- ✅ Beautiful, responsive chat UI
+- ✅ Advanced theme system (Default, iMessage, Discord, Minimal)
+- ✅ Random avatar generation system
+- ✅ 120+ utility classes with Obsidian integration
+- ✅ Beautiful, responsive chat UI with theme switching
 - ✅ Conversation history and context
 - ✅ File triggers (`ai question??`)
 - ✅ Hotkey commands with `prompt.md`
-- ✅ Complete settings interface
+- ✅ Complete settings interface with theme selector
 - ✅ SOLID architecture principles
 - ✅ Professional build system
 
 ### **Ready for Production**
-The plugin is now a professional-grade TypeScript + React application with enterprise-level architecture, complete functionality, and beautiful user experience.
+The plugin is now a professional-grade TypeScript + React application with enterprise-level architecture, advanced theming system, and beautiful user experience that rivals popular messaging platforms.
