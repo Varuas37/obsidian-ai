@@ -26916,6 +26916,11 @@ var StylesManager = class {
       .mb-1 { margin-bottom: 0.25rem !important; }
       .mb-4 { margin-bottom: 1rem !important; }
       
+      /* Additional utilities for Discord theme */
+      .bg-gray-100 { background-color: var(--background-secondary) !important; }
+      .focus\\:ring-blue-500:focus { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5) !important; }
+      .rounded { border-radius: 0.25rem !important; }
+      
       /* Sizing utilities with !important */
       .max-w-\\[80\\%\\] { max-width: 80% !important; }
       .min-w-0 { min-width: 0 !important; }
@@ -27589,7 +27594,7 @@ function ChatInput({ onSend, placeholder = "Ask me anything...", disabled, theme
     ] });
   }
   if (theme === "discord") {
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "p-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "flex items-center gap-3 bg-white dark:bg-gray-700 rounded-lg px-3 py-2 border border-gray-300 dark:border-gray-600", children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700", children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
         "textarea",
         {
@@ -27599,10 +27604,15 @@ function ChatInput({ onSend, placeholder = "Ask me anything...", disabled, theme
           placeholder,
           disabled,
           rows: 1,
-          className: "flex-1 resize-none bg-transparent text-sm placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none",
+          className: "flex-1 resize-none bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-3 text-sm placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 dark:border-gray-600 transition-all",
           style: {
             height: "auto",
-            minHeight: "20px"
+            minHeight: "44px"
+          },
+          onInput: (e) => {
+            const target = e.target;
+            target.style.height = "44px";
+            target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
           }
         }
       ),
@@ -27611,11 +27621,11 @@ function ChatInput({ onSend, placeholder = "Ask me anything...", disabled, theme
         {
           onClick: handleSend,
           disabled: !message.trim() || disabled,
-          className: "p-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors",
-          children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
+          className: "p-2.5 rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex-shrink-0",
+          children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", strokeWidth: 2, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
         }
       )
-    ] }) });
+    ] });
   }
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "ai-chat-input-container", children: [
     /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(

@@ -1086,6 +1086,11 @@ export class StylesManager {
       .mb-1 { margin-bottom: 0.25rem !important; }
       .mb-4 { margin-bottom: 1rem !important; }
       
+      /* Additional utilities for Discord theme */
+      .bg-gray-100 { background-color: var(--background-secondary) !important; }
+      .focus\\:ring-blue-500:focus { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5) !important; }
+      .rounded { border-radius: 0.25rem !important; }
+      
       /* Sizing utilities with !important */
       .max-w-\\[80\\%\\] { max-width: 80% !important; }
       .min-w-0 { min-width: 0 !important; }
