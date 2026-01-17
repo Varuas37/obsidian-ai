@@ -24831,7 +24831,8 @@ var DEFAULT_SETTINGS = {
   openaiModel: "gpt-4o",
   openrouterModel: "openai/gpt-4o-mini",
   ollamaModel: "llama3.1",
-  apiBaseUrl: "",
+  apiBaseUrl: "https://api.openai.com/v1",
+  openaiApiType: "responses",
   maxTokens: 4e3,
   // Context and conversation defaults
   contextWindowSize: 1e5,
@@ -24911,6 +24912,10 @@ var SettingsManager = class {
     if (!validProviders.includes(this.settings.aiProvider)) {
       this.settings.aiProvider = DEFAULT_SETTINGS.aiProvider;
     }
+    const validApiTypes = ["responses", "chat-completions"];
+    if (!validApiTypes.includes(this.settings.openaiApiType)) {
+      this.settings.openaiApiType = DEFAULT_SETTINGS.openaiApiType;
+    }
     if (typeof this.settings.triggerKeyword !== "string") {
       this.settings.triggerKeyword = DEFAULT_SETTINGS.triggerKeyword;
     }
@@ -24966,6 +24971,7 @@ var SettingsManager = class {
         apiKey: this.settings.openaiApiKey,
         model: this.settings.openaiModel,
         baseUrl: this.settings.apiBaseUrl,
+        apiType: this.settings.openaiApiType,
         maxTokens: this.settings.maxTokens
       },
       openrouter: {
@@ -25055,7 +25061,7 @@ var TimedRequestExecutor = class {
     this.providerName = providerName;
     this.executeFn = executeFn;
   }
-  async executeRequest(prompt) {
+  async executeRequest(prompt, context) {
     console.log(`=== ${this.providerName}: Starting request ===`);
     if (typeof prompt === "string") {
       console.log(`${this.providerName}: Prompt length:`, prompt.length);
@@ -25066,7 +25072,7 @@ var TimedRequestExecutor = class {
     const startTime = Date.now();
     console.log(`${this.providerName}: Starting request at`, new Date().toISOString());
     try {
-      const response = await this.executeFn(prompt);
+      const response = await this.executeFn(prompt, context);
       const duration = ((Date.now() - startTime) / 1e3).toFixed(1);
       console.log(`${this.providerName}: Request completed in ${duration}s`);
       return response;
@@ -25211,6 +25217,41 @@ var OllamaResponseAdapter = class {
     return rawResponse.response;
   }
 };
+var OpenAIResponsesAdapter = class {
+  constructor() {
+    this.lastResponseId = null;
+  }
+  adaptResponse(rawResponse) {
+    console.log("=== OPENAI_RESPONSES_ADAPTER: Processing response ===");
+    console.log("Response structure:", rawResponse);
+    if (!rawResponse || !rawResponse.output || !Array.isArray(rawResponse.output)) {
+      console.error("Invalid OpenAI Responses API structure:", rawResponse);
+      throw new Error("Invalid response structure from OpenAI Responses API");
+    }
+    if (rawResponse.id) {
+      this.lastResponseId = rawResponse.id;
+      console.log("OpenAI Responses: Captured response ID for next conversation turn:", this.lastResponseId);
+    }
+    const messageItem = rawResponse.output.find((item) => item.type === "message");
+    if (!messageItem) {
+      console.error("No message item found in response:", rawResponse.output);
+      throw new Error("No message found in OpenAI Responses API output");
+    }
+    if (!messageItem.content || !Array.isArray(messageItem.content)) {
+      console.error("Invalid message content structure:", messageItem);
+      throw new Error("Invalid message content in OpenAI Responses API");
+    }
+    const textContent = messageItem.content.find((content3) => content3.type === "output_text");
+    if (!textContent || !textContent.text) {
+      console.error("No text content found:", messageItem.content);
+      throw new Error("No text content found in OpenAI Responses API message");
+    }
+    return textContent.text;
+  }
+  getLastResponseId() {
+    return this.lastResponseId;
+  }
+};
 var CLIResponseAdapter = class {
   adaptResponse(rawResponse) {
     console.log("=== CLI_ADAPTER: Processing response ===");
@@ -25239,7 +25280,7 @@ var BaseAIProvider = class {
         return this.getConfigurationHelp();
       }
       const prompt = this.promptBuilder.buildPrompt(question, context);
-      const rawResponse = await this.requestExecutor.executeRequest(prompt);
+      const rawResponse = await this.requestExecutor.executeRequest(prompt, context);
       return this.responseAdapter.adaptResponse(rawResponse);
     } catch (error) {
       throw this.errorHandler.handleError(error, "askQuestion");
@@ -25409,38 +25450,110 @@ Please configure your Anthropic API key in Settings:
 };
 var OpenAIProvider = class extends BaseAIProvider {
   constructor(settings) {
-    super(settings, "OpenAI API");
+    const apiType = settings.openaiApiType || "responses";
+    super(settings, `OpenAI ${apiType === "responses" ? "Responses" : "Chat Completions"} API`);
   }
   createPromptBuilder() {
     return new StandardPromptBuilder();
   }
   createResponseAdapter() {
-    return new OpenAIResponseAdapter();
+    const apiType = this.settings.openaiApiType || "responses";
+    return apiType === "responses" ? new OpenAIResponsesAdapter() : new OpenAIResponseAdapter();
   }
   createRequestExecutor() {
-    return new TimedRequestExecutor(this.providerName, async (prompt) => {
-      const baseUrl = this.settings.apiBaseUrl || "https://api.openai.com/v1";
-      const body = {
-        model: this.settings.openaiModel,
-        max_tokens: this.settings.maxTokens,
-        messages: [{
+    return new TimedRequestExecutor(this.providerName, async (prompt, context) => {
+      var _a, _b;
+      const apiKey = (_a = this.settings.openaiApiKey) == null ? void 0 : _a.trim();
+      if (!apiKey) {
+        throw new Error("OpenAI API key is missing or empty");
+      }
+      const apiType = this.settings.openaiApiType || "responses";
+      let baseUrl = (_b = this.settings.apiBaseUrl) == null ? void 0 : _b.trim();
+      if (!baseUrl) {
+        baseUrl = "https://api.openai.com/v1";
+      }
+      baseUrl = baseUrl.replace(/\/+$/, "");
+      const endpoint = apiType === "responses" ? "responses" : "chat/completions";
+      const fullUrl = `${baseUrl}/${endpoint}`;
+      console.log("=== OPENAI API REQUEST DEBUG ===");
+      console.log("API Type:", apiType);
+      console.log("API Key length:", apiKey.length);
+      console.log("API Key starts with:", apiKey.substring(0, 7));
+      console.log("Base URL:", baseUrl);
+      console.log("Full URL:", fullUrl);
+      console.log("Model:", this.settings.openaiModel);
+      console.log("Max tokens:", this.settings.maxTokens);
+      let body;
+      if (apiType === "responses") {
+        body = {
+          model: this.settings.openaiModel || "gpt-4o",
+          input: prompt
+        };
+        if (context == null ? void 0 : context.lastResponseId) {
+          body.previous_response_id = context.lastResponseId;
+          console.log("OpenAI Responses: Using previous_response_id for conversation continuity:", context.lastResponseId);
+        } else {
+          console.log("OpenAI Responses: Starting new conversation (no previous_response_id)");
+        }
+      } else {
+        const messages = [{
           role: "user",
           content: prompt
-        }]
-      };
-      console.log("API: Request body prepared, size:", JSON.stringify(body).length, "bytes");
+        }];
+        if ((context == null ? void 0 : context.chatHistory) && context.chatHistory.length > 0) {
+          console.log("OpenAI Chat Completions: Including manual chat history -", context.chatHistory.length, "messages");
+          const historyMessages = context.chatHistory.filter((msg) => !msg.isThinking).slice(-10).map((msg) => ({
+            role: msg.type === "user" ? "user" : "assistant",
+            content: msg.content
+          }));
+          messages.unshift(...historyMessages);
+        }
+        body = {
+          model: this.settings.openaiModel || "gpt-4o",
+          max_tokens: Number(this.settings.maxTokens) || 4e3,
+          messages
+        };
+      }
+      console.log("OpenAI API: Request body prepared, size:", JSON.stringify(body).length, "bytes");
       const response = await (0, import_obsidian.requestUrl)({
-        url: `${baseUrl}/chat/completions`,
+        url: fullUrl,
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${this.settings.openaiApiKey}`
+          "Authorization": `Bearer ${apiKey}`
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        throw: false
+        // <-- KEY: Don't throw on non-2xx, let us inspect the response
       });
-      console.log("API: Response received, status:", response.status);
+      console.log("=== OPENAI API RESPONSE DEBUG ===");
+      console.log("Status:", response.status);
+      console.log("Response text:", response.text);
+      console.log("Response json:", response.json);
       if (response.status < 200 || response.status >= 300) {
-        throw response;
+        console.error("=== OPENAI API ERROR ===");
+        console.error("Status:", response.status);
+        console.error("Response text:", response.text);
+        console.error("Response json:", response.json);
+        let errorMessage = response.text || JSON.stringify(response.json) || "Unknown error";
+        if (response.status === 404) {
+          errorMessage = `Invalid OpenAI API configuration.
+
+Current URL: ${fullUrl}
+API Type: ${apiType}
+
+Please check your settings:
+\u2022 Base URL should be "https://api.openai.com/v1" for OpenAI
+\u2022 API Type: Choose "responses" (recommended) or "chat-completions"
+\u2022 For custom APIs: Ensure your base URL supports the selected API type
+
+API Error Details: ${errorMessage}`;
+        }
+        const error = new Error(`OpenAI API ${response.status}: ${errorMessage}`);
+        error.status = response.status;
+        error.json = response.json;
+        error.text = response.text;
+        throw error;
       }
       return response.json;
     });
@@ -25449,12 +25562,14 @@ var OpenAIProvider = class extends BaseAIProvider {
     return Boolean(this.settings.openaiApiKey);
   }
   getConfigurationHelp() {
+    const apiType = this.settings.openaiApiType || "responses";
     return `\u26A0\uFE0F **OpenAI API Not Configured**
 
 Please configure your OpenAI API key in Settings:
 1. Go to **Settings \u2192 Obsidian AI Assistant \u2192 OpenAI API Key**
 2. Get your API key from https://platform.openai.com/api-keys
-3. Paste your API key in the settings`;
+3. Paste your API key in the settings
+4. Choose API Type: "${apiType}" (${apiType === "responses" ? "Recommended - newer, more powerful" : "Traditional chat completions"})`;
   }
 };
 var OpenRouterProvider = class extends BaseAIProvider {
@@ -25561,11 +25676,13 @@ Local AI models run on your computer - no API key needed!`;
 
 // src/core/ai-service.ts
 var AIService = class {
+  // Track response ID for conversation chaining
   constructor(app, settingsManager) {
     this.app = app;
     this.settingsManager = settingsManager;
     this.currentProvider = null;
     this.processingFiles = /* @__PURE__ */ new Set();
+    this.lastResponseId = null;
   }
   /**
    * Initialize the AI service
@@ -25626,14 +25743,33 @@ var AIService = class {
     const currentSettings = this.settingsManager.getSettings();
     console.log("Provider setting:", currentSettings.aiProvider);
     console.log("Chat history length:", chatHistory.length);
-    await this.refreshProvider();
+    if (!this.currentProvider) {
+      console.log("=== AI SERVICE: Creating provider (first time or after cleanup) ===");
+      await this.refreshProvider();
+    }
     console.log("Current provider type:", (_a = this.currentProvider) == null ? void 0 : _a.constructor.name);
     const context = await this.gatherContext();
     const contextWithHistory = {
       ...context,
-      chatHistory
+      chatHistory,
+      lastResponseId: this.lastResponseId
+      // Include response ID for conversation chaining
     };
-    return await this.currentProvider.askQuestion(question, contextWithHistory);
+    console.log("=== AI SERVICE: Response ID state ===");
+    console.log("Current response ID:", this.lastResponseId);
+    console.log("Will be passed to provider:", !!this.lastResponseId);
+    const response = await this.currentProvider.askQuestion(question, contextWithHistory);
+    if (currentSettings.aiProvider === "openai" && currentSettings.openaiApiType === "responses") {
+      const responseAdapter = this.currentProvider.responseAdapter;
+      if (responseAdapter && typeof responseAdapter.getLastResponseId === "function") {
+        const newResponseId = responseAdapter.getLastResponseId();
+        if (newResponseId) {
+          this.lastResponseId = newResponseId;
+          console.log("=== AI SERVICE: Stored response ID for next turn ===", newResponseId);
+        }
+      }
+    }
+    return response;
   }
   /**
    * Gather workspace context
@@ -25759,11 +25895,25 @@ var AIService = class {
     }
   }
   /**
+   * Reset conversation chain (clears response ID for new conversation)
+   */
+  resetConversation() {
+    this.lastResponseId = null;
+    console.log("=== AI SERVICE: Conversation chain reset ===");
+  }
+  /**
+   * Get current response ID (for debugging)
+   */
+  getLastResponseId() {
+    return this.lastResponseId;
+  }
+  /**
    * Cleanup resources
    */
   cleanup() {
     this.processingFiles.clear();
     this.currentProvider = null;
+    this.lastResponseId = null;
   }
 };
 
@@ -40263,6 +40413,189 @@ var ThemeProvider = class {
 };
 
 // src/core/conversation-manager.ts
+var ConversationConfig = class {
+  constructor(_model, _maxTokens) {
+    this._model = _model;
+    this._maxTokens = _maxTokens;
+  }
+  /**
+   * Update configuration with new data (base implementation - can be overridden)
+   */
+  updateWith(data) {
+    return this;
+  }
+  /**
+   * Create configuration from JSON (factory method)
+   */
+  static fromJSON(data) {
+    switch (data.aiProvider) {
+      case "openai":
+        return OpenAIConversationConfig.fromJSON(data);
+      case "anthropic":
+        return AnthropicConversationConfig.fromJSON(data);
+      case "openrouter":
+        return OpenRouterConversationConfig.fromJSON(data);
+      case "ollama":
+        return OllamaConversationConfig.fromJSON(data);
+      case "cli":
+        return CLIConversationConfig.fromJSON(data);
+      default:
+        return new CLIConversationConfig(data.maxTokens || 4e3);
+    }
+  }
+};
+var OpenAIConversationConfig = class extends ConversationConfig {
+  constructor(model, maxTokens, apiType, apiBaseUrl, lastResponseId = null) {
+    super(model, maxTokens);
+    this.apiType = apiType;
+    this.apiBaseUrl = apiBaseUrl;
+    this.lastResponseId = lastResponseId;
+    this.aiProvider = "openai";
+  }
+  get model() {
+    return this._model;
+  }
+  get maxTokens() {
+    return this._maxTokens;
+  }
+  toJSON() {
+    return {
+      aiProvider: this.aiProvider,
+      model: this.model,
+      maxTokens: this.maxTokens,
+      apiType: this.apiType,
+      apiBaseUrl: this.apiBaseUrl,
+      lastResponseId: this.lastResponseId
+    };
+  }
+  /**
+   * Update OpenAI config with new data (response ID, etc.)
+   */
+  updateWith(data) {
+    if (data.lastResponseId !== void 0) {
+      return new OpenAIConversationConfig(
+        this.model,
+        this.maxTokens,
+        this.apiType,
+        this.apiBaseUrl,
+        data.lastResponseId
+      );
+    }
+    return this;
+  }
+  static fromJSON(data) {
+    return new OpenAIConversationConfig(
+      data.model || "gpt-4o",
+      data.maxTokens || 4e3,
+      data.apiType || "responses",
+      data.apiBaseUrl || "https://api.openai.com/v1",
+      data.lastResponseId || null
+    );
+  }
+};
+var AnthropicConversationConfig = class extends ConversationConfig {
+  constructor(model, maxTokens) {
+    super(model, maxTokens);
+    this.aiProvider = "anthropic";
+  }
+  get model() {
+    return this._model;
+  }
+  get maxTokens() {
+    return this._maxTokens;
+  }
+  toJSON() {
+    return {
+      aiProvider: this.aiProvider,
+      model: this.model,
+      maxTokens: this.maxTokens
+    };
+  }
+  static fromJSON(data) {
+    return new AnthropicConversationConfig(
+      data.model || "claude-sonnet-4-5",
+      data.maxTokens || 4e3
+    );
+  }
+};
+var OpenRouterConversationConfig = class extends ConversationConfig {
+  constructor(model, maxTokens, apiBaseUrl = "https://openrouter.ai/api/v1") {
+    super(model, maxTokens);
+    this.apiBaseUrl = apiBaseUrl;
+    this.aiProvider = "openrouter";
+  }
+  get model() {
+    return this._model;
+  }
+  get maxTokens() {
+    return this._maxTokens;
+  }
+  toJSON() {
+    return {
+      aiProvider: this.aiProvider,
+      model: this.model,
+      maxTokens: this.maxTokens,
+      apiBaseUrl: this.apiBaseUrl
+    };
+  }
+  static fromJSON(data) {
+    return new OpenRouterConversationConfig(
+      data.model || "openai/gpt-4o-mini",
+      data.maxTokens || 4e3,
+      data.apiBaseUrl || "https://openrouter.ai/api/v1"
+    );
+  }
+};
+var OllamaConversationConfig = class extends ConversationConfig {
+  constructor(model, maxTokens, ollamaUrl = "http://localhost:11434") {
+    super(model, maxTokens);
+    this.ollamaUrl = ollamaUrl;
+    this.aiProvider = "ollama";
+  }
+  get model() {
+    return this._model;
+  }
+  get maxTokens() {
+    return this._maxTokens;
+  }
+  toJSON() {
+    return {
+      aiProvider: this.aiProvider,
+      model: this.model,
+      maxTokens: this.maxTokens,
+      ollamaUrl: this.ollamaUrl
+    };
+  }
+  static fromJSON(data) {
+    return new OllamaConversationConfig(
+      data.model || "llama3.1",
+      data.maxTokens || 4e3,
+      data.ollamaUrl || "http://localhost:11434"
+    );
+  }
+};
+var CLIConversationConfig = class extends ConversationConfig {
+  constructor(maxTokens = 4e3) {
+    super("CLI Tool", maxTokens);
+    this.aiProvider = "cli";
+  }
+  get model() {
+    return this._model;
+  }
+  get maxTokens() {
+    return this._maxTokens;
+  }
+  toJSON() {
+    return {
+      aiProvider: this.aiProvider,
+      model: this.model,
+      maxTokens: this.maxTokens
+    };
+  }
+  static fromJSON(data) {
+    return new CLIConversationConfig(data.maxTokens || 4e3);
+  }
+};
 var ConversationManager = class {
   constructor(app) {
     this.conversationsPath = "ai-assistant-conversations.json";
@@ -40304,13 +40637,84 @@ var ConversationManager = class {
     return `Conversation ${new Date().toLocaleDateString()}`;
   }
   /**
+   * Create configuration snapshot from current settings using factory pattern
+   */
+  createConfigSnapshot(settings) {
+    const model = this.getModelForProvider(settings);
+    const maxTokens = settings.maxTokens || 4e3;
+    switch (settings.aiProvider) {
+      case "openai":
+        return new OpenAIConversationConfig(
+          model,
+          maxTokens,
+          settings.openaiApiType || "responses",
+          settings.apiBaseUrl || "https://api.openai.com/v1"
+        );
+      case "anthropic":
+        return new AnthropicConversationConfig(model, maxTokens);
+      case "openrouter":
+        return new OpenRouterConversationConfig(model, maxTokens);
+      case "ollama":
+        return new OllamaConversationConfig(
+          model,
+          maxTokens,
+          settings.ollamaUrl || "http://localhost:11434"
+        );
+      case "cli":
+      default:
+        return new CLIConversationConfig(maxTokens);
+    }
+  }
+  /**
+   * Get model name for current provider
+   */
+  getModelForProvider(settings) {
+    switch (settings.aiProvider) {
+      case "openai":
+        return settings.openaiModel || "gpt-4o";
+      case "anthropic":
+        return settings.anthropicModel || "claude-sonnet-4-5";
+      case "openrouter":
+        return settings.openrouterModel || "openai/gpt-4o-mini";
+      case "ollama":
+        return settings.ollamaModel || "llama3.1";
+      case "cli":
+        return "CLI Tool";
+      default:
+        return "Unknown";
+    }
+  }
+  /**
+   * Check if current settings are compatible with conversation config
+   */
+  isConfigCompatible(conversationConfig, currentSettings) {
+    const currentConfig = this.createConfigSnapshot(currentSettings);
+    if (conversationConfig.aiProvider !== currentConfig.aiProvider || conversationConfig.model !== currentConfig.model) {
+      return false;
+    }
+    if (conversationConfig instanceof OpenAIConversationConfig && currentConfig instanceof OpenAIConversationConfig) {
+      return conversationConfig.apiType === currentConfig.apiType && conversationConfig.apiBaseUrl === currentConfig.apiBaseUrl;
+    }
+    if (conversationConfig instanceof OpenRouterConversationConfig && currentConfig instanceof OpenRouterConversationConfig) {
+      return conversationConfig.apiBaseUrl === currentConfig.apiBaseUrl;
+    }
+    if (conversationConfig instanceof OllamaConversationConfig && currentConfig instanceof OllamaConversationConfig) {
+      return conversationConfig.ollamaUrl === currentConfig.ollamaUrl;
+    }
+    return true;
+  }
+  /**
    * Load all conversations from storage
    */
   async loadConversations() {
     try {
       console.log("=== CONVERSATION MANAGER: Loading conversations ===");
       const data = await this.app.vault.adapter.read(this.conversationsPath);
-      const conversations = JSON.parse(data);
+      const rawData = JSON.parse(data);
+      const conversations = rawData.map((conv) => ({
+        ...conv,
+        config: ConversationConfig.fromJSON(conv.config)
+      }));
       console.log(`=== CONVERSATION MANAGER: Loaded ${conversations.length} conversations ===`);
       return conversations;
     } catch (error) {
@@ -40333,9 +40737,9 @@ var ConversationManager = class {
     }
   }
   /**
-   * Save current conversation
+   * Save current conversation with configuration snapshot
    */
-  async saveConversation(messages, existingId) {
+  async saveConversation(messages, existingId, settings) {
     try {
       const conversations = await this.loadConversations();
       const now = Date.now();
@@ -40344,29 +40748,45 @@ var ConversationManager = class {
       if (existingId) {
         const existingIndex = conversations.findIndex((c) => c.id === existingId);
         if (existingIndex !== -1) {
+          const existing = conversations[existingIndex];
+          const updatedConfig = existing.config ? existing.config.updateWith(settings || {}) : this.createConfigSnapshot(settings || {});
+          if (updatedConfig !== existing.config) {
+            console.log(`=== CONVERSATION MANAGER: Config updated for conversation ${existingId} ===`);
+          }
           conversations[existingIndex] = {
-            ...conversations[existingIndex],
+            ...existing,
             messages,
             name: conversationName,
             updatedAt: now,
-            wordCount
+            wordCount,
+            config: updatedConfig
           };
           console.log(`=== CONVERSATION MANAGER: Updated conversation ${existingId} ===`);
         } else {
           throw new Error(`Conversation with id ${existingId} not found`);
         }
       } else {
+        const config = settings ? this.createConfigSnapshot(settings) : this.createConfigSnapshot({
+          aiProvider: "cli",
+          openaiModel: "gpt-4o",
+          anthropicModel: "claude-sonnet-4-5",
+          openrouterModel: "openai/gpt-4o-mini",
+          ollamaModel: "llama3.1",
+          maxTokens: 4e3
+        });
         const newConversation = {
           id: this.generateConversationId(),
           name: conversationName,
           messages,
+          config,
           createdAt: now,
           updatedAt: now,
           wordCount
         };
         conversations.push(newConversation);
         existingId = newConversation.id;
-        console.log(`=== CONVERSATION MANAGER: Created new conversation ${existingId} ===`);
+        console.log(`=== CONVERSATION MANAGER: Created new conversation ${existingId} with config ===`);
+        console.log("Config snapshot:", config);
       }
       await this.saveConversations(conversations);
       return existingId;
@@ -40418,7 +40838,8 @@ var ConversationManager = class {
         createdAt: c.createdAt,
         updatedAt: c.updatedAt,
         messageCount: c.messages.length,
-        wordCount: c.wordCount
+        wordCount: c.wordCount,
+        config: c.config
       })).sort((a, b) => b.updatedAt - a.updatedAt);
     } catch (error) {
       console.error("=== CONVERSATION MANAGER: Error getting metadata:", error);

@@ -23,6 +23,7 @@ export interface PluginSettings {
   openrouterModel: string;
   ollamaModel: string;
   apiBaseUrl: string;
+  openaiApiType: 'responses' | 'chat-completions';
   maxTokens: number;
   // Context and conversation settings
   contextWindowSize: number; // Maximum words to keep in context
@@ -50,7 +51,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   openaiModel: "gpt-4o",
   openrouterModel: "openai/gpt-4o-mini",
   ollamaModel: "llama3.1",
-  apiBaseUrl: "",
+  apiBaseUrl: "https://api.openai.com/v1",
+  openaiApiType: "responses",
   maxTokens: 4000,
   // Context and conversation defaults
   contextWindowSize: 100000, // 100K words max context
@@ -154,6 +156,12 @@ export class SettingsManager {
       this.settings.aiProvider = DEFAULT_SETTINGS.aiProvider;
     }
 
+    // Validate OpenAI API type
+    const validApiTypes: PluginSettings['openaiApiType'][] = ['responses', 'chat-completions'];
+    if (!validApiTypes.includes(this.settings.openaiApiType)) {
+      this.settings.openaiApiType = DEFAULT_SETTINGS.openaiApiType;
+    }
+
     // Ensure required strings are not null/undefined
     if (typeof this.settings.triggerKeyword !== 'string') {
       this.settings.triggerKeyword = DEFAULT_SETTINGS.triggerKeyword;
@@ -215,6 +223,7 @@ export class SettingsManager {
         apiKey: this.settings.openaiApiKey,
         model: this.settings.openaiModel,
         baseUrl: this.settings.apiBaseUrl,
+        apiType: this.settings.openaiApiType,
         maxTokens: this.settings.maxTokens
       },
       openrouter: {

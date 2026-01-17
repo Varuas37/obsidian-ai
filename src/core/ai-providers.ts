@@ -30,6 +30,7 @@ export interface WorkspaceContext {
   contentLength: number;
   timestamp: string;
   chatHistory?: any[];
+  lastResponseId?: string | null; // For OpenAI Responses API conversation chaining
 }
 
 /**
@@ -52,7 +53,7 @@ export interface PromptBuilder {
  * HTTP request execution interface - Single Responsibility
  */
 export interface RequestExecutor {
-  executeRequest(prompt: string | PromptStructure): Promise<any>;
+  executeRequest(prompt: string | PromptStructure, context?: WorkspaceContext): Promise<any>;
 }
 
 /**
@@ -171,10 +172,10 @@ Answer conversationally and helpfully, as if in a chat.`;
 export class TimedRequestExecutor implements RequestExecutor {
   constructor(
     private providerName: string,
-    private executeFn: (prompt: string | PromptStructure) => Promise<any>
+    private executeFn: (prompt: string | PromptStructure, context?: WorkspaceContext) => Promise<any>
   ) {}
 
-  async executeRequest(prompt: string | PromptStructure): Promise<any> {
+  async executeRequest(prompt: string | PromptStructure, context?: WorkspaceContext): Promise<any> {
     console.log(`=== ${this.providerName}: Starting request ===`);
     
     if (typeof prompt === 'string') {
@@ -188,7 +189,7 @@ export class TimedRequestExecutor implements RequestExecutor {
     console.log(`${this.providerName}: Starting request at`, new Date().toISOString());
     
     try {
-      const response = await this.executeFn(prompt);
+      const response = await this.executeFn(prompt, context);
       const duration = ((Date.now() - startTime) / 1000).toFixed(1);
       console.log(`${this.providerName}: Request completed in ${duration}s`);
       return response;
@@ -364,6 +365,56 @@ export class OllamaResponseAdapter implements ResponseAdapter {
 }
 
 /**
+ * OpenAI Responses API response adapter
+ * Normalizes OpenAI's new Responses API output format and captures response ID
+ */
+export class OpenAIResponsesAdapter implements ResponseAdapter {
+  private lastResponseId: string | null = null;
+
+  adaptResponse(rawResponse: any): string {
+    console.log("=== OPENAI_RESPONSES_ADAPTER: Processing response ===");
+    console.log("Response structure:", rawResponse);
+    
+    if (!rawResponse || !rawResponse.output || !Array.isArray(rawResponse.output)) {
+      console.error("Invalid OpenAI Responses API structure:", rawResponse);
+      throw new Error("Invalid response structure from OpenAI Responses API");
+    }
+    
+    // Capture response ID for conversation chaining
+    if (rawResponse.id) {
+      this.lastResponseId = rawResponse.id;
+      console.log("OpenAI Responses: Captured response ID for next conversation turn:", this.lastResponseId);
+    }
+    
+    // Find the message item in the output array
+    const messageItem = rawResponse.output.find((item: any) => item.type === 'message');
+    if (!messageItem) {
+      console.error("No message item found in response:", rawResponse.output);
+      throw new Error("No message found in OpenAI Responses API output");
+    }
+    
+    // Extract text from the message content
+    if (!messageItem.content || !Array.isArray(messageItem.content)) {
+      console.error("Invalid message content structure:", messageItem);
+      throw new Error("Invalid message content in OpenAI Responses API");
+    }
+    
+    // Find the output_text content
+    const textContent = messageItem.content.find((content: any) => content.type === 'output_text');
+    if (!textContent || !textContent.text) {
+      console.error("No text content found:", messageItem.content);
+      throw new Error("No text content found in OpenAI Responses API message");
+    }
+    
+    return textContent.text;
+  }
+
+  getLastResponseId(): string | null {
+    return this.lastResponseId;
+  }
+}
+
+/**
  * CLI response adapter
  * Normalizes CLI output by cleaning ANSI codes
  */
@@ -420,7 +471,7 @@ export abstract class BaseAIProvider implements AIProvider {
       }
 
       const prompt = this.promptBuilder.buildPrompt(question, context);
-      const rawResponse = await this.requestExecutor.executeRequest(prompt);
+      const rawResponse = await this.requestExecutor.executeRequest(prompt, context);
       return this.responseAdapter.adaptResponse(rawResponse);
     } catch (error: any) {
       throw this.errorHandler.handleError(error, 'askQuestion');
@@ -633,11 +684,12 @@ Please configure your Anthropic API key in Settings:
 }
 
 /**
- * OpenAI Provider - Minimal implementation using shared services
+ * OpenAI Provider - Supports both Chat Completions and Responses APIs
  */
 export class OpenAIProvider extends BaseAIProvider {
   constructor(settings: PluginSettings) {
-    super(settings, 'OpenAI API');
+    const apiType = settings.openaiApiType || 'responses';
+    super(settings, `OpenAI ${apiType === 'responses' ? 'Responses' : 'Chat Completions'} API`);
   }
 
   protected createPromptBuilder(): PromptBuilder {
@@ -645,37 +697,136 @@ export class OpenAIProvider extends BaseAIProvider {
   }
 
   protected createResponseAdapter(): ResponseAdapter {
-    return new OpenAIResponseAdapter();
+    const apiType = this.settings.openaiApiType || 'responses';
+    return apiType === 'responses' ? new OpenAIResponsesAdapter() : new OpenAIResponseAdapter();
   }
 
   protected createRequestExecutor(): RequestExecutor {
-    return new TimedRequestExecutor(this.providerName, async (prompt: string | PromptStructure) => {
-      const baseUrl = this.settings.apiBaseUrl || "https://api.openai.com/v1";
-      const body = {
-        model: this.settings.openaiModel,
-        max_tokens: this.settings.maxTokens,
-        messages: [{
+    return new TimedRequestExecutor(this.providerName, async (prompt: string | PromptStructure, context?: WorkspaceContext) => {
+      // IMPORTANT: Trim and validate API key
+      const apiKey = this.settings.openaiApiKey?.trim();
+      if (!apiKey) {
+        throw new Error("OpenAI API key is missing or empty");
+      }
+      
+      // Determine API type
+      const apiType = this.settings.openaiApiType || 'responses';
+      
+      // Validate and construct base URL
+      let baseUrl = this.settings.apiBaseUrl?.trim();
+      if (!baseUrl) {
+        baseUrl = "https://api.openai.com/v1";
+      }
+      
+      // Remove trailing slashes for clean URL construction
+      baseUrl = baseUrl.replace(/\/+$/, '');
+      
+      // Construct endpoint URL based on API type
+      const endpoint = apiType === 'responses' ? 'responses' : 'chat/completions';
+      const fullUrl = `${baseUrl}/${endpoint}`;
+      
+      console.log("=== OPENAI API REQUEST DEBUG ===");
+      console.log("API Type:", apiType);
+      console.log("API Key length:", apiKey.length);
+      console.log("API Key starts with:", apiKey.substring(0, 7));
+      console.log("Base URL:", baseUrl);
+      console.log("Full URL:", fullUrl);
+      console.log("Model:", this.settings.openaiModel);
+      console.log("Max tokens:", this.settings.maxTokens);
+      
+      // Prepare request body based on API type
+      let body: any;
+      if (apiType === 'responses') {
+        // Responses API format - supports conversation chaining
+        body = {
+          model: this.settings.openaiModel || "gpt-4o",
+          input: prompt as string
+        };
+        
+        // Add conversation chaining if we have a previous response ID
+        if (context?.lastResponseId) {
+          body.previous_response_id = context.lastResponseId;
+          console.log("OpenAI Responses: Using previous_response_id for conversation continuity:", context.lastResponseId);
+        } else {
+          console.log("OpenAI Responses: Starting new conversation (no previous_response_id)");
+        }
+      } else {
+        // Chat Completions API format - manually include chat history
+        const messages: any[] = [{
           role: "user",
           content: prompt as string
-        }]
-      };
+        }];
+        
+        // Include chat history for Chat Completions API
+        if (context?.chatHistory && context.chatHistory.length > 0) {
+          console.log("OpenAI Chat Completions: Including manual chat history -", context.chatHistory.length, "messages");
+          
+          // Build message history manually
+          const historyMessages = context.chatHistory
+            .filter((msg: any) => !msg.isThinking)
+            .slice(-10) // Keep last 10 messages to avoid token limits
+            .map((msg: any) => ({
+              role: msg.type === 'user' ? 'user' : 'assistant',
+              content: msg.content
+            }));
+          
+          // Prepend history before current message
+          messages.unshift(...historyMessages);
+        }
+        
+        body = {
+          model: this.settings.openaiModel || "gpt-4o",
+          max_tokens: Number(this.settings.maxTokens) || 4000,
+          messages: messages
+        };
+      }
       
-      console.log("API: Request body prepared, size:", JSON.stringify(body).length, "bytes");
+      console.log("OpenAI API: Request body prepared, size:", JSON.stringify(body).length, "bytes");
       
       const response = await requestUrl({
-        url: `${baseUrl}/chat/completions`,
+        url: fullUrl,
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${this.settings.openaiApiKey}`
+          "Authorization": `Bearer ${apiKey}`
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        throw: false  // <-- KEY: Don't throw on non-2xx, let us inspect the response
       });
       
-      console.log("API: Response received, status:", response.status);
+      console.log("=== OPENAI API RESPONSE DEBUG ===");
+      console.log("Status:", response.status);
+      console.log("Response text:", response.text);
+      console.log("Response json:", response.json);
       
       if (response.status < 200 || response.status >= 300) {
-        throw response; // Let error handler deal with it
+        console.error("=== OPENAI API ERROR ===");
+        console.error("Status:", response.status);
+        console.error("Response text:", response.text);
+        console.error("Response json:", response.json);
+        
+        let errorMessage = response.text || JSON.stringify(response.json) || "Unknown error";
+        
+        // Check for common configuration issues and provide helpful guidance
+        if (response.status === 404) {
+          errorMessage = `Invalid OpenAI API configuration.
+
+Current URL: ${fullUrl}
+API Type: ${apiType}
+
+Please check your settings:
+• Base URL should be "https://api.openai.com/v1" for OpenAI
+• API Type: Choose "responses" (recommended) or "chat-completions"
+• For custom APIs: Ensure your base URL supports the selected API type
+
+API Error Details: ${errorMessage}`;
+        }
+        
+        const error: any = new Error(`OpenAI API ${response.status}: ${errorMessage}`);
+        error.status = response.status;
+        error.json = response.json;
+        error.text = response.text;
+        throw error;
       }
       
       return response.json;
@@ -687,12 +838,14 @@ export class OpenAIProvider extends BaseAIProvider {
   }
 
   getConfigurationHelp(): string {
+    const apiType = this.settings.openaiApiType || 'responses';
     return `⚠️ **OpenAI API Not Configured**
 
 Please configure your OpenAI API key in Settings:
 1. Go to **Settings → Obsidian AI Assistant → OpenAI API Key**
 2. Get your API key from https://platform.openai.com/api-keys
-3. Paste your API key in the settings`;
+3. Paste your API key in the settings
+4. Choose API Type: "${apiType}" (${apiType === 'responses' ? 'Recommended - newer, more powerful' : 'Traditional chat completions'})`;
   }
 }
 

@@ -18,6 +18,7 @@ import {
 export class AIService {
   private currentProvider: AIProvider | null = null;
   private processingFiles = new Set<string>();
+  private lastResponseId: string | null = null; // Track response ID for conversation chaining
 
   constructor(
     private app: App,
@@ -89,18 +90,40 @@ export class AIService {
     console.log("Provider setting:", currentSettings.aiProvider);
     console.log("Chat history length:", chatHistory.length);
     
-    // Always refresh provider to ensure we're using the correct one
-    await this.refreshProvider();
+    // Only refresh provider if we don't have one or if settings changed
+    if (!this.currentProvider) {
+      console.log("=== AI SERVICE: Creating provider (first time or after cleanup) ===");
+      await this.refreshProvider();
+    }
     
     console.log("Current provider type:", this.currentProvider?.constructor.name);
 
     const context = await this.gatherContext();
     const contextWithHistory = {
       ...context,
-      chatHistory: chatHistory
+      chatHistory: chatHistory,
+      lastResponseId: this.lastResponseId // Include response ID for conversation chaining
     };
+
+    console.log("=== AI SERVICE: Response ID state ===");
+    console.log("Current response ID:", this.lastResponseId);
+    console.log("Will be passed to provider:", !!this.lastResponseId);
     
-    return await this.currentProvider!.askQuestion(question, contextWithHistory);
+    const response = await this.currentProvider!.askQuestion(question, contextWithHistory);
+    
+    // Extract and store response ID for next conversation turn (OpenAI Responses API only)
+    if (currentSettings.aiProvider === 'openai' && currentSettings.openaiApiType === 'responses') {
+      const responseAdapter = (this.currentProvider as any).responseAdapter;
+      if (responseAdapter && typeof responseAdapter.getLastResponseId === 'function') {
+        const newResponseId = responseAdapter.getLastResponseId();
+        if (newResponseId) {
+          this.lastResponseId = newResponseId;
+          console.log("=== AI SERVICE: Stored response ID for next turn ===", newResponseId);
+        }
+      }
+    }
+    
+    return response;
   }
 
   /**
@@ -244,10 +267,26 @@ export class AIService {
   }
 
   /**
+   * Reset conversation chain (clears response ID for new conversation)
+   */
+  resetConversation(): void {
+    this.lastResponseId = null;
+    console.log("=== AI SERVICE: Conversation chain reset ===");
+  }
+
+  /**
+   * Get current response ID (for debugging)
+   */
+  getLastResponseId(): string | null {
+    return this.lastResponseId;
+  }
+
+  /**
    * Cleanup resources
    */
   cleanup(): void {
     this.processingFiles.clear();
     this.currentProvider = null;
+    this.lastResponseId = null;
   }
 }
