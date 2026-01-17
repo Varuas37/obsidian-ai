@@ -3,6 +3,7 @@ import { useAIService, useSettings, useApp } from './context';
 import { ThemeProvider, ThemeName } from './themes';
 import { HeaderButton, ContextInfo } from './themes/types';
 import { ConversationManager, StoredMessage } from '../core/conversation-manager';
+import { ConversationHistoryPanel } from './ConversationHistoryPanel';
 
 interface Message {
   id: string;
@@ -18,6 +19,7 @@ export const ChatInterface: React.FC = () => {
   const [currentTheme, setCurrentTheme] = useState<string>('default');
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [contextInfo, setContextInfo] = useState<ContextInfo>({ currentWords: 0, maxWords: 8000, percentage: 0 });
+  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const aiService = useAIService();
@@ -188,13 +190,13 @@ export const ChatInterface: React.FC = () => {
    * Start a new conversation
    */
   const startNewChat = async () => {
-    // Save current conversation if it has content
-    if (messages.length > 1 && currentConversationId) {
+    // Save current conversation if it has content and auto-save is enabled
+    const settings = settingsManager.getSettings();
+    if (settings.autoSaveConversations && messages.length > 1 && currentConversationId) {
       await saveCurrentConversation();
     }
     
     // Reset to welcome message
-    const settings = settingsManager.getSettings();
     const providerName = getProviderDisplayName(settings.aiProvider);
     
     setMessages([{
@@ -205,15 +207,31 @@ export const ChatInterface: React.FC = () => {
     }]);
     
     setCurrentConversationId(null);
+    setShowHistoryPanel(false); // Close history panel when starting new chat
     console.log("=== CHAT INTERFACE: Started new chat ===");
   };
 
   /**
-   * Show conversation history (placeholder for now)
+   * Show/hide conversation history panel
    */
-  const showHistory = () => {
-    console.log("=== CHAT INTERFACE: History button clicked (not implemented yet) ===");
-    // TODO: Implement history modal/page
+  const toggleHistory = () => {
+    setShowHistoryPanel(!showHistoryPanel);
+    console.log(`=== CHAT INTERFACE: History panel ${!showHistoryPanel ? 'opened' : 'closed'} ===`);
+  };
+
+  /**
+   * Handle conversation selection from history
+   */
+  const handleConversationSelect = async (conversationId: string) => {
+    // Save current conversation if it has content and auto-save is enabled
+    const settings = settingsManager.getSettings();
+    if (settings.autoSaveConversations && messages.length > 1 && currentConversationId && currentConversationId !== conversationId) {
+      await saveCurrentConversation();
+    }
+    
+    // Load the selected conversation
+    await loadConversation(conversationId);
+    setShowHistoryPanel(false); // Close history panel after selection
   };
 
   /**
@@ -340,9 +358,9 @@ export const ChatInterface: React.FC = () => {
       id: 'history',
       label: 'History',
       icon: '📚',
-      onClick: showHistory,
+      onClick: toggleHistory,
       variant: 'secondary',
-      tooltip: 'View conversation history (coming soon)'
+      tooltip: showHistoryPanel ? 'Close conversation history' : 'View conversation history'
     }
   ];
 
@@ -350,6 +368,21 @@ export const ChatInterface: React.FC = () => {
   const themeProvider = ThemeProvider.getInstance();
   const themeComponents = themeProvider.getComponents(currentTheme as ThemeName);
 
+  // Show history view or chat view
+  if (showHistoryPanel) {
+    return (
+      <div className={currentTheme === 'default' ? 'ai-chat-container' : `ai-chat-container-${currentTheme}`}>
+        <ConversationHistoryPanel
+          onSelectConversation={handleConversationSelect}
+          onNewConversation={startNewChat}
+          onClose={() => setShowHistoryPanel(false)}
+          currentConversationId={currentConversationId}
+        />
+      </div>
+    );
+  }
+
+  // Normal chat view
   return (
     <div className={currentTheme === 'default' ? 'ai-chat-container' : `ai-chat-container-${currentTheme}`}>
       <themeComponents.Header

@@ -11,6 +11,7 @@ export class StylesManager {
    */
   initializeStyles(): void {
     this.addChatStyles();
+    this.addHistoryStyles();
     this.addAnimations();
     this.addResponsiveStyles();
     this.addThemeStyles();
@@ -407,6 +408,42 @@ export class StylesManager {
         color: var(--text-faint);
         margin-top: 4px;
         padding: 0 8px;
+      }
+    `;
+    
+    this.addStyleElement(styleId, styles);
+  }
+
+  /**
+   * Add conversation history panel styles - No Modal Styling
+   */
+  private addHistoryStyles(): void {
+    const styleId = 'ai-chat-history';
+    const styles = `
+      /* Conversation History Panel - True Full Screen */
+      .conversation-history-panel {
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: var(--background-primary) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        position: relative !important;
+        box-shadow: none !important;
+      }
+      
+      /* Loading spinner for history panel */
+      .animate-spin {
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
       }
     `;
     

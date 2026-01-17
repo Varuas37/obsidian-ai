@@ -66,9 +66,26 @@ Use [`ConversationManager`](src/core/conversation-manager.ts) for persistence:
 const conversationManager = ConversationManager.getInstance(app);
 await conversationManager.saveConversation(messages, conversationId);
 const conversation = await conversationManager.loadConversation(id);
+const metadata = await conversationManager.getConversationMetadata();
 ```
 
-### **4. Adding New Commands**
+### **4. Using Conversation History Panel**
+Import and integrate the conversation history component:
+```typescript
+import { ConversationHistoryPanel } from './ConversationHistoryPanel';
+
+// In your component:
+{showHistoryPanel && (
+  <ConversationHistoryPanel
+    onSelectConversation={handleConversationSelect}
+    onNewConversation={startNewChat}
+    onClose={() => setShowHistoryPanel(false)}
+    currentConversationId={currentConversationId}
+  />
+)}
+```
+
+### **5. Adding New Commands**
 ```typescript
 // In command-handler.ts
 plugin.addCommand({
@@ -78,7 +95,7 @@ plugin.addCommand({
 });
 ```
 
-### **5. Adding React Components**
+### **6. Adding React Components**
 ```typescript
 import React from 'react';
 import { useAIService, useSettings, useApp } from './context';

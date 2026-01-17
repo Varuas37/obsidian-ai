@@ -1094,7 +1094,7 @@ var require_react_development = __commonJS({
           }
           return dispatcher.useContext(Context);
         }
-        function useState6(initialState) {
+        function useState7(initialState) {
           var dispatcher = resolveDispatcher();
           return dispatcher.useState(initialState);
         }
@@ -1106,7 +1106,7 @@ var require_react_development = __commonJS({
           var dispatcher = resolveDispatcher();
           return dispatcher.useRef(initialValue);
         }
-        function useEffect2(create, deps) {
+        function useEffect3(create, deps) {
           var dispatcher = resolveDispatcher();
           return dispatcher.useEffect(create, deps);
         }
@@ -1889,7 +1889,7 @@ var require_react_development = __commonJS({
         exports.useContext = useContext2;
         exports.useDebugValue = useDebugValue;
         exports.useDeferredValue = useDeferredValue;
-        exports.useEffect = useEffect2;
+        exports.useEffect = useEffect3;
         exports.useId = useId;
         exports.useImperativeHandle = useImperativeHandle;
         exports.useInsertionEffect = useInsertionEffect;
@@ -1897,7 +1897,7 @@ var require_react_development = __commonJS({
         exports.useMemo = useMemo;
         exports.useReducer = useReducer;
         exports.useRef = useRef2;
-        exports.useState = useState6;
+        exports.useState = useState7;
         exports.useSyncExternalStore = useSyncExternalStore;
         exports.useTransition = useTransition;
         exports.version = ReactVersion;
@@ -2393,9 +2393,9 @@ var require_react_dom_development = __commonJS({
         if (typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart === "function") {
           __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(new Error());
         }
-        var React8 = require_react();
+        var React9 = require_react();
         var Scheduler = require_scheduler();
-        var ReactSharedInternals = React8.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+        var ReactSharedInternals = React9.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
         var suppressWarning = false;
         function setSuppressWarning(newSuppressWarning) {
           {
@@ -4000,7 +4000,7 @@ var require_react_dom_development = __commonJS({
           {
             if (props.value == null) {
               if (typeof props.children === "object" && props.children !== null) {
-                React8.Children.forEach(props.children, function(child) {
+                React9.Children.forEach(props.children, function(child) {
                   if (child == null) {
                     return;
                   }
@@ -23569,7 +23569,7 @@ var require_react_jsx_runtime_development = __commonJS({
     if (true) {
       (function() {
         "use strict";
-        var React8 = require_react();
+        var React9 = require_react();
         var REACT_ELEMENT_TYPE = Symbol.for("react.element");
         var REACT_PORTAL_TYPE = Symbol.for("react.portal");
         var REACT_FRAGMENT_TYPE = Symbol.for("react.fragment");
@@ -23595,7 +23595,7 @@ var require_react_jsx_runtime_development = __commonJS({
           }
           return null;
         }
-        var ReactSharedInternals = React8.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+        var ReactSharedInternals = React9.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
         function error(format) {
           {
             {
@@ -24445,11 +24445,11 @@ var require_react_jsx_runtime_development = __commonJS({
             return jsxWithValidation(type, props, key, false);
           }
         }
-        var jsx16 = jsxWithValidationDynamic;
-        var jsxs14 = jsxWithValidationStatic;
+        var jsx17 = jsxWithValidationDynamic;
+        var jsxs15 = jsxWithValidationStatic;
         exports.Fragment = REACT_FRAGMENT_TYPE;
-        exports.jsx = jsx16;
-        exports.jsxs = jsxs14;
+        exports.jsx = jsx17;
+        exports.jsxs = jsxs15;
       })();
     }
   }
@@ -25888,6 +25888,7 @@ var StylesManager = class {
    */
   initializeStyles() {
     this.addChatStyles();
+    this.addHistoryStyles();
     this.addAnimations();
     this.addResponsiveStyles();
     this.addThemeStyles();
@@ -26283,6 +26284,40 @@ var StylesManager = class {
         color: var(--text-faint);
         margin-top: 4px;
         padding: 0 8px;
+      }
+    `;
+    this.addStyleElement(styleId, styles);
+  }
+  /**
+   * Add conversation history panel styles - No Modal Styling
+   */
+  addHistoryStyles() {
+    const styleId = "ai-chat-history";
+    const styles = `
+      /* Conversation History Panel - True Full Screen */
+      .conversation-history-panel {
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: var(--background-primary) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        position: relative !important;
+        box-shadow: none !important;
+      }
+      
+      /* Loading spinner for history panel */
+      .animate-spin {
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
       }
     `;
     this.addStyleElement(styleId, styles);
@@ -27262,7 +27297,7 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
 };
 
 // src/ui/react-chat-view.tsx
-var import_react7 = __toESM(require_react());
+var import_react8 = __toESM(require_react());
 var import_obsidian4 = require("obsidian");
 var import_client = __toESM(require_client());
 
@@ -27303,7 +27338,7 @@ var ContextProviders = ({
 };
 
 // src/react/ChatInterface.tsx
-var import_react6 = __toESM(require_react());
+var import_react7 = __toESM(require_react());
 
 // src/react/themes/default/Bubble.tsx
 var import_jsx_runtime2 = __toESM(require_jsx_runtime());
@@ -28127,26 +28162,468 @@ var ConversationManager = class {
   }
 };
 
-// src/react/ChatInterface.tsx
+// src/react/ConversationHistoryPanel.tsx
+var import_react6 = __toESM(require_react());
 var import_jsx_runtime14 = __toESM(require_jsx_runtime());
-var ChatInterface = () => {
-  const [messages, setMessages] = (0, import_react6.useState)([]);
-  const [isProcessing, setIsProcessing] = (0, import_react6.useState)(false);
-  const [currentTheme, setCurrentTheme] = (0, import_react6.useState)("default");
-  const [currentConversationId, setCurrentConversationId] = (0, import_react6.useState)(null);
-  const [contextInfo, setContextInfo] = (0, import_react6.useState)({ currentWords: 0, maxWords: 8e3, percentage: 0 });
-  const messagesEndRef = (0, import_react6.useRef)(null);
-  const aiService = useAIService();
-  const settingsManager = useSettings();
+var ConversationHistoryPanel = ({
+  onSelectConversation,
+  onNewConversation,
+  onClose,
+  currentConversationId
+}) => {
+  const [conversations, setConversations] = (0, import_react6.useState)([]);
+  const [searchQuery, setSearchQuery] = (0, import_react6.useState)("");
+  const [isLoading, setIsLoading] = (0, import_react6.useState)(true);
+  const [error, setError] = (0, import_react6.useState)(null);
   const app = useApp();
+  const settings = useSettings();
   const conversationManager = import_react6.default.useMemo(() => {
     return ConversationManager.getInstance(app);
   }, [app]);
   (0, import_react6.useEffect)(() => {
+    loadConversations();
+  }, []);
+  const loadConversations = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      console.log("=== CONVERSATION HISTORY: Loading conversations ===");
+      const metadata = await conversationManager.getConversationMetadata();
+      setConversations(metadata);
+      console.log(`=== CONVERSATION HISTORY: Loaded ${metadata.length} conversations ===`);
+    } catch (err) {
+      console.error("=== CONVERSATION HISTORY: Error loading conversations:", err);
+      setError("Failed to load conversations");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const handleDeleteConversation = async (conversationId, event) => {
+    event.stopPropagation();
+    try {
+      console.log(`=== CONVERSATION HISTORY: Deleting conversation ${conversationId} ===`);
+      await conversationManager.deleteConversation(conversationId);
+      await loadConversations();
+      if (conversationId === currentConversationId) {
+        onNewConversation();
+      }
+    } catch (err) {
+      console.error("=== CONVERSATION HISTORY: Error deleting conversation:", err);
+      setError("Failed to delete conversation");
+    }
+  };
+  const handleClearAllConversations = async () => {
+    if (!confirm("Are you sure you want to delete all conversations? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      console.log("=== CONVERSATION HISTORY: Clearing all conversations ===");
+      await conversationManager.clearAllConversations();
+      setConversations([]);
+      onNewConversation();
+    } catch (err) {
+      console.error("=== CONVERSATION HISTORY: Error clearing conversations:", err);
+      setError("Failed to clear conversations");
+    }
+  };
+  const formatDate = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1e3 * 60 * 60 * 24));
+    if (diffDays === 0) {
+      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    } else if (diffDays === 1) {
+      return "Yesterday";
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+  const filteredConversations = conversations.filter(
+    (conv) => conv.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const settingsData = settings.getSettings();
+  const maxHistoryToShow = settingsData.maxConversationHistory || 50;
+  const displayedConversations = filteredConversations.slice(0, maxHistoryToShow);
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+    "div",
+    {
+      style: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100%",
+        height: "100%",
+        margin: 0,
+        padding: 0,
+        border: "none",
+        borderRadius: 0,
+        background: "var(--background-primary)",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        boxShadow: "none"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+          "div",
+          {
+            style: {
+              padding: "16px 20px",
+              borderBottom: "1px solid var(--background-modifier-border)",
+              background: "var(--background-primary)",
+              flexShrink: 0
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: "16px"
+                  },
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                      "h3",
+                      {
+                        style: {
+                          margin: 0,
+                          fontSize: "18px",
+                          fontWeight: "600",
+                          color: "var(--text-normal)"
+                        },
+                        children: "Conversation History"
+                      }
+                    ),
+                    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                      "button",
+                      {
+                        onClick: onClose,
+                        style: {
+                          background: "none",
+                          border: "none",
+                          color: "var(--text-muted)",
+                          fontSize: "18px",
+                          cursor: "pointer",
+                          padding: "4px 8px",
+                          borderRadius: "4px",
+                          transition: "all 0.2s"
+                        },
+                        onMouseEnter: (e) => {
+                          e.currentTarget.style.color = "var(--text-normal)";
+                          e.currentTarget.style.background = "var(--background-modifier-hover)";
+                        },
+                        onMouseLeave: (e) => {
+                          e.currentTarget.style.color = "var(--text-muted)";
+                          e.currentTarget.style.background = "none";
+                        },
+                        title: "Back to chat",
+                        children: "\u2190"
+                      }
+                    )
+                  ]
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { marginBottom: "16px" }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                "input",
+                {
+                  type: "text",
+                  placeholder: "Search conversations...",
+                  value: searchQuery,
+                  onChange: (e) => setSearchQuery(e.target.value),
+                  style: {
+                    width: "100%",
+                    padding: "8px 12px",
+                    border: "1px solid var(--background-modifier-border)",
+                    borderRadius: "6px",
+                    background: "var(--background-primary)",
+                    color: "var(--text-normal)",
+                    fontSize: "14px",
+                    boxSizing: "border-box"
+                  }
+                }
+              ) }),
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { display: "flex", gap: "8px" }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                  "button",
+                  {
+                    onClick: onNewConversation,
+                    style: {
+                      flex: 1,
+                      padding: "8px 12px",
+                      background: "var(--interactive-accent)",
+                      color: "var(--text-on-accent)",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      cursor: "pointer",
+                      transition: "background-color 0.2s"
+                    },
+                    onMouseEnter: (e) => {
+                      e.currentTarget.style.background = "var(--interactive-accent-hover)";
+                    },
+                    onMouseLeave: (e) => {
+                      e.currentTarget.style.background = "var(--interactive-accent)";
+                    },
+                    children: "\u2795 New Chat"
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                  "button",
+                  {
+                    onClick: handleClearAllConversations,
+                    disabled: conversations.length === 0,
+                    style: {
+                      padding: "8px 12px",
+                      background: conversations.length === 0 ? "var(--background-modifier-border)" : "#dc3545",
+                      color: conversations.length === 0 ? "var(--text-faint)" : "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      cursor: conversations.length === 0 ? "not-allowed" : "pointer",
+                      transition: "background-color 0.2s"
+                    },
+                    onMouseEnter: (e) => {
+                      if (conversations.length > 0) {
+                        e.currentTarget.style.background = "#c82333";
+                      }
+                    },
+                    onMouseLeave: (e) => {
+                      if (conversations.length > 0) {
+                        e.currentTarget.style.background = "#dc3545";
+                      }
+                    },
+                    children: "\u{1F5D1}\uFE0F Clear All"
+                  }
+                )
+              ] })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+          "div",
+          {
+            style: {
+              flex: 1,
+              overflow: "auto",
+              background: "var(--background-primary)"
+            },
+            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+              "div",
+              {
+                style: {
+                  padding: "40px",
+                  textAlign: "center",
+                  color: "var(--text-muted)"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                    "div",
+                    {
+                      style: {
+                        width: "24px",
+                        height: "24px",
+                        border: "2px solid var(--background-modifier-border)",
+                        borderTop: "2px solid var(--interactive-accent)",
+                        borderRadius: "50%",
+                        animation: "spin 1s linear infinite",
+                        margin: "0 auto 16px"
+                      }
+                    }
+                  ),
+                  "Loading conversations..."
+                ]
+              }
+            ) : error ? /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+              "div",
+              {
+                style: {
+                  padding: "40px",
+                  textAlign: "center",
+                  color: "var(--text-error)"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { style: { margin: "0 0 16px" }, children: error }),
+                  /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                    "button",
+                    {
+                      onClick: loadConversations,
+                      style: {
+                        padding: "6px 12px",
+                        background: "var(--interactive-accent)",
+                        color: "var(--text-on-accent)",
+                        border: "none",
+                        borderRadius: "4px",
+                        fontSize: "14px",
+                        cursor: "pointer"
+                      },
+                      children: "Retry"
+                    }
+                  )
+                ]
+              }
+            ) : displayedConversations.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+              "div",
+              {
+                style: {
+                  padding: "40px",
+                  textAlign: "center",
+                  color: "var(--text-muted)"
+                },
+                children: searchQuery ? "No conversations match your search." : "No saved conversations yet."
+              }
+            ) : /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { width: "100%" }, children: [
+              displayedConversations.map((conv) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                "div",
+                {
+                  onClick: () => onSelectConversation(conv.id),
+                  style: {
+                    padding: "16px 20px",
+                    borderBottom: "1px solid var(--background-modifier-border)",
+                    cursor: "pointer",
+                    background: conv.id === currentConversationId ? "var(--background-modifier-hover)" : "transparent",
+                    borderLeft: conv.id === currentConversationId ? "3px solid var(--interactive-accent)" : "3px solid transparent",
+                    transition: "all 0.2s",
+                    width: "100%",
+                    boxSizing: "border-box"
+                  },
+                  onMouseEnter: (e) => {
+                    if (conv.id !== currentConversationId) {
+                      e.currentTarget.style.background = "var(--background-modifier-hover)";
+                    }
+                  },
+                  onMouseLeave: (e) => {
+                    if (conv.id !== currentConversationId) {
+                      e.currentTarget.style.background = "transparent";
+                    }
+                  },
+                  children: /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { display: "flex", alignItems: "flex-start", justifyContent: "space-between" }, children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                        "h4",
+                        {
+                          style: {
+                            margin: "0 0 6px",
+                            fontSize: "15px",
+                            fontWeight: "500",
+                            color: "var(--text-normal)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap"
+                          },
+                          children: conv.name
+                        }
+                      ),
+                      /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+                        "div",
+                        {
+                          style: {
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            fontSize: "12px",
+                            color: "var(--text-muted)"
+                          },
+                          children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: formatDate(conv.updatedAt) }),
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: "\u2022" }),
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { children: [
+                              conv.messageCount,
+                              " messages"
+                            ] }),
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: "\u2022" }),
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { children: [
+                              conv.wordCount,
+                              " words"
+                            ] })
+                          ]
+                        }
+                      )
+                    ] }),
+                    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                      "button",
+                      {
+                        onClick: (e) => handleDeleteConversation(conv.id, e),
+                        style: {
+                          marginLeft: "12px",
+                          padding: "4px",
+                          background: "none",
+                          border: "none",
+                          color: "var(--text-faint)",
+                          cursor: "pointer",
+                          borderRadius: "4px",
+                          transition: "all 0.2s"
+                        },
+                        onMouseEnter: (e) => {
+                          e.currentTarget.style.color = "var(--text-error)";
+                          e.currentTarget.style.background = "var(--background-modifier-error-hover)";
+                        },
+                        onMouseLeave: (e) => {
+                          e.currentTarget.style.color = "var(--text-faint)";
+                          e.currentTarget.style.background = "none";
+                        },
+                        title: "Delete conversation",
+                        children: "\u{1F5D1}\uFE0F"
+                      }
+                    )
+                  ] })
+                },
+                conv.id
+              )),
+              filteredConversations.length > maxHistoryToShow && /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+                "div",
+                {
+                  style: {
+                    padding: "16px 20px",
+                    textAlign: "center",
+                    color: "var(--text-muted)",
+                    fontSize: "14px"
+                  },
+                  children: [
+                    "Showing first ",
+                    maxHistoryToShow,
+                    " of ",
+                    filteredConversations.length,
+                    " conversations.",
+                    searchQuery && " Try refining your search."
+                  ]
+                }
+              )
+            ] })
+          }
+        )
+      ]
+    }
+  );
+};
+
+// src/react/ChatInterface.tsx
+var import_jsx_runtime15 = __toESM(require_jsx_runtime());
+var ChatInterface = () => {
+  const [messages, setMessages] = (0, import_react7.useState)([]);
+  const [isProcessing, setIsProcessing] = (0, import_react7.useState)(false);
+  const [currentTheme, setCurrentTheme] = (0, import_react7.useState)("default");
+  const [currentConversationId, setCurrentConversationId] = (0, import_react7.useState)(null);
+  const [contextInfo, setContextInfo] = (0, import_react7.useState)({ currentWords: 0, maxWords: 8e3, percentage: 0 });
+  const [showHistoryPanel, setShowHistoryPanel] = (0, import_react7.useState)(false);
+  const messagesEndRef = (0, import_react7.useRef)(null);
+  const aiService = useAIService();
+  const settingsManager = useSettings();
+  const app = useApp();
+  const conversationManager = import_react7.default.useMemo(() => {
+    return ConversationManager.getInstance(app);
+  }, [app]);
+  (0, import_react7.useEffect)(() => {
     var _a;
     (_a = messagesEndRef.current) == null ? void 0 : _a.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-  (0, import_react6.useEffect)(() => {
+  (0, import_react7.useEffect)(() => {
     const settings2 = settingsManager.getSettings();
     if (settings2.enableContextTracking) {
       const wordCount = messages.reduce((total, msg) => {
@@ -28165,7 +28642,7 @@ var ChatInterface = () => {
       console.log(`=== CHAT INTERFACE: Context tracking - ${wordCount}/${maxWords} words (${percentage.toFixed(1)}%) ===`);
     }
   }, [messages, settingsManager]);
-  (0, import_react6.useEffect)(() => {
+  (0, import_react7.useEffect)(() => {
     const settings2 = settingsManager.getSettings();
     const newTheme = settings2.chatTheme || "default";
     console.log("=== CHAT INTERFACE: Theme change detected:", newTheme);
@@ -28176,18 +28653,18 @@ var ChatInterface = () => {
       console.log("=== CHAT INTERFACE: Theme state updated to:", newTheme);
     }
   }, [settingsManager, currentTheme]);
-  (0, import_react6.useEffect)(() => {
+  (0, import_react7.useEffect)(() => {
     const settings2 = settingsManager.getSettings();
     const initialTheme = settings2.chatTheme || "default";
     console.log("=== CHAT INTERFACE: Initial theme:", initialTheme);
     console.log("=== CHAT INTERFACE: Component mounted with theme:", initialTheme);
     setCurrentTheme(initialTheme);
   }, []);
-  (0, import_react6.useEffect)(() => {
+  (0, import_react7.useEffect)(() => {
     console.log("=== CHAT INTERFACE: currentTheme state changed to:", currentTheme);
     console.log("=== CHAT INTERFACE: Will use container class:", currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`);
   }, [currentTheme]);
-  (0, import_react6.useEffect)(() => {
+  (0, import_react7.useEffect)(() => {
     const settings2 = settingsManager.getSettings();
     const providerName = getProviderDisplayName(settings2.aiProvider);
     setMessages([{
@@ -28197,7 +28674,7 @@ var ChatInterface = () => {
       timestamp: new Date()
     }]);
   }, [settingsManager]);
-  (0, import_react6.useEffect)(() => {
+  (0, import_react7.useEffect)(() => {
     const settings2 = settingsManager.getSettings();
     if (settings2.autoSaveConversations && messages.length > 1) {
       saveCurrentConversation();
@@ -28260,10 +28737,10 @@ var ChatInterface = () => {
     }
   };
   const startNewChat = async () => {
-    if (messages.length > 1 && currentConversationId) {
+    const settings2 = settingsManager.getSettings();
+    if (settings2.autoSaveConversations && messages.length > 1 && currentConversationId) {
       await saveCurrentConversation();
     }
-    const settings2 = settingsManager.getSettings();
     const providerName = getProviderDisplayName(settings2.aiProvider);
     setMessages([{
       id: "welcome",
@@ -28272,10 +28749,20 @@ var ChatInterface = () => {
       timestamp: new Date()
     }]);
     setCurrentConversationId(null);
+    setShowHistoryPanel(false);
     console.log("=== CHAT INTERFACE: Started new chat ===");
   };
-  const showHistory = () => {
-    console.log("=== CHAT INTERFACE: History button clicked (not implemented yet) ===");
+  const toggleHistory = () => {
+    setShowHistoryPanel(!showHistoryPanel);
+    console.log(`=== CHAT INTERFACE: History panel ${!showHistoryPanel ? "opened" : "closed"} ===`);
+  };
+  const handleConversationSelect = async (conversationId) => {
+    const settings2 = settingsManager.getSettings();
+    if (settings2.autoSaveConversations && messages.length > 1 && currentConversationId && currentConversationId !== conversationId) {
+      await saveCurrentConversation();
+    }
+    await loadConversation(conversationId);
+    setShowHistoryPanel(false);
   };
   const trimMessagesForContext = (messages2) => {
     const settings2 = settingsManager.getSettings();
@@ -28372,16 +28859,27 @@ var ChatInterface = () => {
       id: "history",
       label: "History",
       icon: "\u{1F4DA}",
-      onClick: showHistory,
+      onClick: toggleHistory,
       variant: "secondary",
-      tooltip: "View conversation history (coming soon)"
+      tooltip: showHistoryPanel ? "Close conversation history" : "View conversation history"
     }
   ];
   const settings = settingsManager.getSettings();
   const themeProvider = ThemeProvider.getInstance();
   const themeComponents = themeProvider.getComponents(currentTheme);
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+  if (showHistoryPanel) {
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+      ConversationHistoryPanel,
+      {
+        onSelectConversation: handleConversationSelect,
+        onNewConversation: startNewChat,
+        onClose: () => setShowHistoryPanel(false),
+        currentConversationId
+      }
+    ) });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
       themeComponents.Header,
       {
         name: "AI Assistant",
@@ -28390,12 +28888,12 @@ var ChatInterface = () => {
         contextInfo: settings.enableContextTracking ? contextInfo : void 0
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-messages" : `ai-chat-messages-${currentTheme}`, children: [
-      messages.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "flex flex-col items-center justify-center h-full text-center text-muted-foreground", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: "w-16 h-16 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] flex items-center justify-center mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "text-2xl text-white", children: "\u{1F4AC}" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { className: "text-sm", children: "No messages yet" }),
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { className: "text-xs mt-1", children: "Start the conversation!" })
-      ] }) : messages.map((message) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-messages" : `ai-chat-messages-${currentTheme}`, children: [
+      messages.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "flex flex-col items-center justify-center h-full text-center text-muted-foreground", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "w-16 h-16 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] flex items-center justify-center mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "text-2xl text-white", children: "\u{1F4AC}" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { className: "text-sm", children: "No messages yet" }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { className: "text-xs mt-1", children: "Start the conversation!" })
+      ] }) : messages.map((message) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
         themeComponents.Bubble,
         {
           message: message.isThinking ? "Thinking..." : message.content,
@@ -28404,9 +28902,9 @@ var ChatInterface = () => {
         },
         message.id
       )),
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { ref: messagesEndRef })
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { ref: messagesEndRef })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
       themeComponents.Input,
       {
         onSend: handleSendMessage,
@@ -28418,7 +28916,7 @@ var ChatInterface = () => {
 };
 
 // src/ui/react-chat-view.tsx
-var import_jsx_runtime15 = __toESM(require_jsx_runtime());
+var import_jsx_runtime16 = __toESM(require_jsx_runtime());
 var VIEW_TYPE_AI_CHAT = "ai-chat-view";
 var ReactChatView = class extends import_obsidian4.ItemView {
   constructor(leaf, aiService, settingsManager, stylesManager) {
@@ -28441,13 +28939,13 @@ var ReactChatView = class extends import_obsidian4.ItemView {
     console.log("Opening React chat view...");
     this.root = (0, import_client.createRoot)(this.contentEl);
     this.root.render(
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_react7.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_react8.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
         ContextProviders,
         {
           app: this.app,
           aiService: this.aiService,
           settingsManager: this.settingsManager,
-          children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ChatInterface, {})
+          children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ChatInterface, {})
         }
       ) })
     );
@@ -28466,13 +28964,13 @@ var ReactChatView = class extends import_obsidian4.ItemView {
       const settings = this.settingsManager.getSettings();
       const themeKey = `chat-${settings.chatTheme}-${Date.now()}`;
       this.root.render(
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_react7.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_react8.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
           ContextProviders,
           {
             app: this.app,
             aiService: this.aiService,
             settingsManager: this.settingsManager,
-            children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ChatInterface, {}, themeKey)
+            children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ChatInterface, {}, themeKey)
           }
         ) })
       );
