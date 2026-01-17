@@ -25028,6 +25028,47 @@ ${context.contextContent}` : "No active file currently open."}
 Answer conversationally and helpfully, building on our previous conversation.`;
   }
 };
+var OpenAIResponsesPromptBuilder = class {
+  buildPrompt(question, context) {
+    if (context.lastResponseId) {
+      console.log("=== OPENAI_RESPONSES_PROMPT_BUILDER: Using efficient chaining (no manual history) ===");
+      return this.buildOptimizedPrompt(question, context);
+    }
+    console.log("=== OPENAI_RESPONSES_PROMPT_BUILDER: New conversation (no response ID) ===");
+    return this.buildNewConversationPrompt(question, context);
+  }
+  buildOptimizedPrompt(question, context) {
+    return `You are an Obsidian AI Assistant. Continue our conversation naturally.
+
+CURRENT WORKSPACE:
+- Vault: ${context.vaultName}
+- File: ${context.activeFile ? context.activeFile.path : "None"}
+
+${context.contextContent ? `CURRENT FILE CONTENT:
+${context.contextContent}` : ""}
+
+USER QUESTION: ${question}`;
+  }
+  buildNewConversationPrompt(question, context) {
+    return `You are an Obsidian AI Assistant helping users manage their notes and knowledge base.
+
+WORKSPACE CONTEXT:
+- Vault: ${context.vaultName}
+- Current folder: ${context.folderPath}
+- Current file: ${context.activeFile ? context.activeFile.path : "None"}
+- Main folders: ${context.allFolders}
+
+${context.contextContent ? `CURRENT FILE CONTENT:
+${context.contextContent}` : "No active file open."}
+
+SAFETY RULES:
+- NEVER perform destructive actions without explicit confirmation
+- Be helpful and provide context-aware suggestions
+- Format responses clearly with markdown when appropriate
+
+USER QUESTION: ${question}`;
+  }
+};
 var AnthropicPromptBuilder = class {
   buildPrompt(question, context) {
     const systemPrompt = `You are an Obsidian AI Assistant helping users manage their notes and knowledge base through a chat interface.
@@ -25454,6 +25495,10 @@ var OpenAIProvider = class extends BaseAIProvider {
     super(settings, `OpenAI ${apiType === "responses" ? "Responses" : "Chat Completions"} API`);
   }
   createPromptBuilder() {
+    const apiType = this.settings.openaiApiType || "responses";
+    if (apiType === "responses") {
+      return new OpenAIResponsesPromptBuilder();
+    }
     return new StandardPromptBuilder();
   }
   createResponseAdapter() {

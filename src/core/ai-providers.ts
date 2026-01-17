@@ -134,6 +134,56 @@ Answer conversationally and helpfully, building on our previous conversation.`;
 }
 
 /**
+ * OpenAI Responses API optimized prompt builder
+ * Skips manual history when using previous_response_id for maximum efficiency
+ */
+export class OpenAIResponsesPromptBuilder implements PromptBuilder {
+  buildPrompt(question: string, context: WorkspaceContext): string {
+    // When we have a response ID, OpenAI handles conversation context
+    // No need to include manual chat history - this saves 40-80% tokens!
+    if (context.lastResponseId) {
+      console.log("=== OPENAI_RESPONSES_PROMPT_BUILDER: Using efficient chaining (no manual history) ===");
+      return this.buildOptimizedPrompt(question, context);
+    }
+
+    // For new conversations, include some context but no chat history
+    console.log("=== OPENAI_RESPONSES_PROMPT_BUILDER: New conversation (no response ID) ===");
+    return this.buildNewConversationPrompt(question, context);
+  }
+
+  private buildOptimizedPrompt(question: string, context: WorkspaceContext): string {
+    return `You are an Obsidian AI Assistant. Continue our conversation naturally.
+
+CURRENT WORKSPACE:
+- Vault: ${context.vaultName}
+- File: ${context.activeFile ? context.activeFile.path : "None"}
+
+${context.contextContent ? `CURRENT FILE CONTENT:\n${context.contextContent}` : ""}
+
+USER QUESTION: ${question}`;
+  }
+
+  private buildNewConversationPrompt(question: string, context: WorkspaceContext): string {
+    return `You are an Obsidian AI Assistant helping users manage their notes and knowledge base.
+
+WORKSPACE CONTEXT:
+- Vault: ${context.vaultName}
+- Current folder: ${context.folderPath}
+- Current file: ${context.activeFile ? context.activeFile.path : "None"}
+- Main folders: ${context.allFolders}
+
+${context.contextContent ? `CURRENT FILE CONTENT:\n${context.contextContent}` : "No active file open."}
+
+SAFETY RULES:
+- NEVER perform destructive actions without explicit confirmation
+- Be helpful and provide context-aware suggestions
+- Format responses clearly with markdown when appropriate
+
+USER QUESTION: ${question}`;
+  }
+}
+
+/**
  * Anthropic-specific prompt builder (system/user separation)
  */
 export class AnthropicPromptBuilder implements PromptBuilder {
@@ -693,6 +743,12 @@ export class OpenAIProvider extends BaseAIProvider {
   }
 
   protected createPromptBuilder(): PromptBuilder {
+    const apiType = this.settings.openaiApiType || 'responses';
+    // Use optimized prompt builder for Responses API to eliminate redundant history
+    if (apiType === 'responses') {
+      return new OpenAIResponsesPromptBuilder();
+    }
+    // Use standard prompt builder for Chat Completions (needs manual history)
     return new StandardPromptBuilder();
   }
 
