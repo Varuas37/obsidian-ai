@@ -1094,7 +1094,7 @@ var require_react_development = __commonJS({
           }
           return dispatcher.useContext(Context);
         }
-        function useState7(initialState) {
+        function useState6(initialState) {
           var dispatcher = resolveDispatcher();
           return dispatcher.useState(initialState);
         }
@@ -1106,7 +1106,7 @@ var require_react_development = __commonJS({
           var dispatcher = resolveDispatcher();
           return dispatcher.useRef(initialValue);
         }
-        function useEffect3(create, deps) {
+        function useEffect2(create, deps) {
           var dispatcher = resolveDispatcher();
           return dispatcher.useEffect(create, deps);
         }
@@ -1889,7 +1889,7 @@ var require_react_development = __commonJS({
         exports.useContext = useContext2;
         exports.useDebugValue = useDebugValue;
         exports.useDeferredValue = useDeferredValue;
-        exports.useEffect = useEffect3;
+        exports.useEffect = useEffect2;
         exports.useId = useId;
         exports.useImperativeHandle = useImperativeHandle;
         exports.useInsertionEffect = useInsertionEffect;
@@ -1897,7 +1897,7 @@ var require_react_development = __commonJS({
         exports.useMemo = useMemo;
         exports.useReducer = useReducer;
         exports.useRef = useRef2;
-        exports.useState = useState7;
+        exports.useState = useState6;
         exports.useSyncExternalStore = useSyncExternalStore;
         exports.useTransition = useTransition;
         exports.version = ReactVersion;
@@ -2393,9 +2393,9 @@ var require_react_dom_development = __commonJS({
         if (typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart === "function") {
           __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(new Error());
         }
-        var React9 = require_react();
+        var React8 = require_react();
         var Scheduler = require_scheduler();
-        var ReactSharedInternals = React9.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+        var ReactSharedInternals = React8.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
         var suppressWarning = false;
         function setSuppressWarning(newSuppressWarning) {
           {
@@ -4000,7 +4000,7 @@ var require_react_dom_development = __commonJS({
           {
             if (props.value == null) {
               if (typeof props.children === "object" && props.children !== null) {
-                React9.Children.forEach(props.children, function(child) {
+                React8.Children.forEach(props.children, function(child) {
                   if (child == null) {
                     return;
                   }
@@ -23569,7 +23569,7 @@ var require_react_jsx_runtime_development = __commonJS({
     if (true) {
       (function() {
         "use strict";
-        var React9 = require_react();
+        var React8 = require_react();
         var REACT_ELEMENT_TYPE = Symbol.for("react.element");
         var REACT_PORTAL_TYPE = Symbol.for("react.portal");
         var REACT_FRAGMENT_TYPE = Symbol.for("react.fragment");
@@ -23595,7 +23595,7 @@ var require_react_jsx_runtime_development = __commonJS({
           }
           return null;
         }
-        var ReactSharedInternals = React9.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+        var ReactSharedInternals = React8.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
         function error(format) {
           {
             {
@@ -24445,11 +24445,11 @@ var require_react_jsx_runtime_development = __commonJS({
             return jsxWithValidation(type, props, key, false);
           }
         }
-        var jsx17 = jsxWithValidationDynamic;
-        var jsxs15 = jsxWithValidationStatic;
+        var jsx20 = jsxWithValidationDynamic;
+        var jsxs18 = jsxWithValidationStatic;
         exports.Fragment = REACT_FRAGMENT_TYPE;
-        exports.jsx = jsx17;
-        exports.jsxs = jsxs15;
+        exports.jsx = jsx20;
+        exports.jsxs = jsxs18;
       })();
     }
   }
@@ -27297,7 +27297,7 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
 };
 
 // src/ui/react-chat-view.tsx
-var import_react8 = __toESM(require_react());
+var import_react7 = __toESM(require_react());
 var import_obsidian4 = require("obsidian");
 var import_client = __toESM(require_client());
 
@@ -27338,7 +27338,7 @@ var ContextProviders = ({
 };
 
 // src/react/ChatInterface.tsx
-var import_react7 = __toESM(require_react());
+var import_react6 = __toESM(require_react());
 
 // src/react/themes/default/Bubble.tsx
 var import_jsx_runtime2 = __toESM(require_jsx_runtime());
@@ -27354,9 +27354,44 @@ function DefaultBubble({ message, isUser, timestamp }) {
 var import_jsx_runtime3 = __toESM(require_jsx_runtime());
 function DefaultHeader({ name, status = "AI Assistant", buttons = [], contextInfo }) {
   return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "ai-chat-header", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "ai-chat-header-main", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { className: "ai-chat-title", children: name }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ai-chat-provider-label", children: status })
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: contextInfo ? "12px" : "0" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "ai-chat-header-main", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { className: "ai-chat-title", children: name }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ai-chat-provider-label", children: status })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { display: "flex", alignItems: "center", gap: "8px" }, children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+        "button",
+        {
+          style: {
+            background: "var(--interactive-normal)",
+            border: "1px solid var(--background-modifier-border)",
+            borderRadius: "6px",
+            padding: "8px",
+            color: "var(--text-normal)",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            fontSize: "14px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minWidth: "32px",
+            height: "32px"
+          },
+          onClick: button.onClick,
+          disabled: button.disabled,
+          title: button.tooltip || button.label,
+          onMouseEnter: (e) => {
+            e.currentTarget.style.background = "var(--interactive-hover)";
+            e.currentTarget.style.transform = "scale(1.05)";
+          },
+          onMouseLeave: (e) => {
+            e.currentTarget.style.background = "var(--interactive-normal)";
+            e.currentTarget.style.transform = "scale(1)";
+          },
+          children: button.icon
+        },
+        button.id
+      )) })
     ] }),
     contextInfo && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ai-chat-context-bar", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "ai-chat-context-info", children: [
       /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { className: "ai-chat-context-text", children: [
@@ -27379,21 +27414,7 @@ function DefaultHeader({ name, status = "AI Assistant", buttons = [], contextInf
         contextInfo.percentage.toFixed(0),
         "%"
       ] })
-    ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ai-chat-header-actions", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
-      "button",
-      {
-        className: `ai-chat-action-btn ai-chat-btn-${button.variant || "secondary"}`,
-        onClick: button.onClick,
-        disabled: button.disabled,
-        title: button.tooltip || button.label,
-        children: [
-          button.icon && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "ai-chat-btn-icon", children: button.icon }),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "ai-chat-btn-text", children: button.label })
-        ]
-      },
-      button.id
-    )) })
+    ] }) })
   ] });
 }
 
@@ -27439,6 +27460,395 @@ function DefaultInput({ onSend, placeholder = "Ask me anything...", disabled }) 
   ] });
 }
 
+// src/react/themes/default/HistoryPanel.tsx
+var import_jsx_runtime5 = __toESM(require_jsx_runtime());
+var DefaultHistoryPanel = ({
+  conversations,
+  searchQuery,
+  isLoading,
+  error,
+  currentConversationId,
+  onSelectConversation,
+  onNewConversation,
+  onClose,
+  onDeleteConversation,
+  onClearAllConversations,
+  onSearchChange,
+  onRetry,
+  maxHistoryToShow,
+  formatDate
+}) => {
+  const displayedConversations = conversations.slice(0, maxHistoryToShow);
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+    "div",
+    {
+      style: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100%",
+        height: "100%",
+        margin: 0,
+        padding: 0,
+        border: "none",
+        borderRadius: 0,
+        background: "var(--background-primary)",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        boxShadow: "none"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+          "div",
+          {
+            style: {
+              padding: "16px 20px",
+              borderBottom: "1px solid var(--background-modifier-border)",
+              background: "var(--background-primary)",
+              flexShrink: 0
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: "16px"
+                  },
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                      "h3",
+                      {
+                        style: {
+                          margin: 0,
+                          fontSize: "18px",
+                          fontWeight: "600",
+                          color: "var(--text-normal)"
+                        },
+                        children: "Conversation History"
+                      }
+                    ),
+                    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                      "button",
+                      {
+                        onClick: onClose,
+                        style: {
+                          background: "none",
+                          border: "none",
+                          color: "var(--text-muted)",
+                          fontSize: "18px",
+                          cursor: "pointer",
+                          padding: "4px 8px",
+                          borderRadius: "4px",
+                          transition: "all 0.2s"
+                        },
+                        onMouseEnter: (e) => {
+                          e.currentTarget.style.color = "var(--text-normal)";
+                          e.currentTarget.style.background = "var(--background-modifier-hover)";
+                        },
+                        onMouseLeave: (e) => {
+                          e.currentTarget.style.color = "var(--text-muted)";
+                          e.currentTarget.style.background = "none";
+                        },
+                        title: "Back to chat",
+                        children: "\u2190"
+                      }
+                    )
+                  ]
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { marginBottom: "16px" }, children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                "input",
+                {
+                  type: "text",
+                  placeholder: "Search conversations...",
+                  value: searchQuery,
+                  onChange: (e) => onSearchChange(e.target.value),
+                  style: {
+                    width: "100%",
+                    padding: "8px 12px",
+                    border: "1px solid var(--background-modifier-border)",
+                    borderRadius: "6px",
+                    background: "var(--background-primary)",
+                    color: "var(--text-normal)",
+                    fontSize: "14px",
+                    boxSizing: "border-box"
+                  }
+                }
+              ) }),
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { display: "flex", gap: "8px" }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+                  "button",
+                  {
+                    onClick: onNewConversation,
+                    style: {
+                      flex: 1,
+                      padding: "8px 12px",
+                      background: "var(--interactive-accent)",
+                      color: "var(--text-on-accent)",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      cursor: "pointer",
+                      transition: "background-color 0.2s",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px"
+                    },
+                    onMouseEnter: (e) => {
+                      e.currentTarget.style.background = "var(--interactive-accent-hover)";
+                    },
+                    onMouseLeave: (e) => {
+                      e.currentTarget.style.background = "var(--interactive-accent)";
+                    },
+                    children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
+                      "New Chat"
+                    ]
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+                  "button",
+                  {
+                    onClick: onClearAllConversations,
+                    disabled: conversations.length === 0,
+                    style: {
+                      padding: "8px 12px",
+                      background: conversations.length === 0 ? "var(--background-modifier-border)" : "#dc3545",
+                      color: conversations.length === 0 ? "var(--text-faint)" : "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      cursor: conversations.length === 0 ? "not-allowed" : "pointer",
+                      transition: "background-color 0.2s",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px"
+                    },
+                    onMouseEnter: (e) => {
+                      if (conversations.length > 0) {
+                        e.currentTarget.style.background = "#c82333";
+                      }
+                    },
+                    onMouseLeave: (e) => {
+                      if (conversations.length > 0) {
+                        e.currentTarget.style.background = "#dc3545";
+                      }
+                    },
+                    children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) }),
+                      "Clear All"
+                    ]
+                  }
+                )
+              ] })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+          "div",
+          {
+            style: {
+              flex: 1,
+              overflow: "auto",
+              background: "var(--background-primary)"
+            },
+            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+              "div",
+              {
+                style: {
+                  padding: "40px",
+                  textAlign: "center",
+                  color: "var(--text-muted)"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                    "div",
+                    {
+                      style: {
+                        width: "24px",
+                        height: "24px",
+                        border: "2px solid var(--background-modifier-border)",
+                        borderTop: "2px solid var(--interactive-accent)",
+                        borderRadius: "50%",
+                        animation: "spin 1s linear infinite",
+                        margin: "0 auto 16px"
+                      }
+                    }
+                  ),
+                  "Loading conversations..."
+                ]
+              }
+            ) : error ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+              "div",
+              {
+                style: {
+                  padding: "40px",
+                  textAlign: "center",
+                  color: "var(--text-error)"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { style: { margin: "0 0 16px" }, children: error }),
+                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                    "button",
+                    {
+                      onClick: onRetry,
+                      style: {
+                        padding: "6px 12px",
+                        background: "var(--interactive-accent)",
+                        color: "var(--text-on-accent)",
+                        border: "none",
+                        borderRadius: "4px",
+                        fontSize: "14px",
+                        cursor: "pointer"
+                      },
+                      children: "Retry"
+                    }
+                  )
+                ]
+              }
+            ) : displayedConversations.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+              "div",
+              {
+                style: {
+                  padding: "40px",
+                  textAlign: "center",
+                  color: "var(--text-muted)"
+                },
+                children: searchQuery ? "No conversations match your search." : "No saved conversations yet."
+              }
+            ) : /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { width: "100%" }, children: [
+              displayedConversations.map((conv) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                "div",
+                {
+                  onClick: () => onSelectConversation(conv.id),
+                  style: {
+                    padding: "16px 20px",
+                    borderBottom: "1px solid var(--background-modifier-border)",
+                    cursor: "pointer",
+                    background: conv.id === currentConversationId ? "var(--background-modifier-hover)" : "transparent",
+                    borderLeft: conv.id === currentConversationId ? "3px solid var(--interactive-accent)" : "3px solid transparent",
+                    transition: "all 0.2s",
+                    width: "100%",
+                    boxSizing: "border-box"
+                  },
+                  onMouseEnter: (e) => {
+                    if (conv.id !== currentConversationId) {
+                      e.currentTarget.style.background = "var(--background-modifier-hover)";
+                    }
+                  },
+                  onMouseLeave: (e) => {
+                    if (conv.id !== currentConversationId) {
+                      e.currentTarget.style.background = "transparent";
+                    }
+                  },
+                  children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { display: "flex", alignItems: "flex-start", justifyContent: "space-between" }, children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                        "h4",
+                        {
+                          style: {
+                            margin: "0 0 6px",
+                            fontSize: "15px",
+                            fontWeight: "500",
+                            color: "var(--text-normal)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap"
+                          },
+                          children: conv.name
+                        }
+                      ),
+                      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+                        "div",
+                        {
+                          style: {
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            fontSize: "12px",
+                            color: "var(--text-muted)"
+                          },
+                          children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: formatDate(conv.updatedAt) }),
+                            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: "\u2022" }),
+                            /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("span", { children: [
+                              conv.messageCount,
+                              " messages"
+                            ] }),
+                            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: "\u2022" }),
+                            /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("span", { children: [
+                              conv.wordCount,
+                              " words"
+                            ] })
+                          ]
+                        }
+                      )
+                    ] }),
+                    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                      "button",
+                      {
+                        onClick: (e) => onDeleteConversation(conv.id, e),
+                        style: {
+                          marginLeft: "12px",
+                          padding: "4px",
+                          background: "none",
+                          border: "none",
+                          color: "var(--text-faint)",
+                          cursor: "pointer",
+                          borderRadius: "4px",
+                          transition: "all 0.2s"
+                        },
+                        onMouseEnter: (e) => {
+                          e.currentTarget.style.color = "var(--text-error)";
+                          e.currentTarget.style.background = "var(--background-modifier-error-hover)";
+                        },
+                        onMouseLeave: (e) => {
+                          e.currentTarget.style.color = "var(--text-faint)";
+                          e.currentTarget.style.background = "none";
+                        },
+                        title: "Delete conversation",
+                        children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) })
+                      }
+                    )
+                  ] })
+                },
+                conv.id
+              )),
+              conversations.length > maxHistoryToShow && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+                "div",
+                {
+                  style: {
+                    padding: "16px 20px",
+                    textAlign: "center",
+                    color: "var(--text-muted)",
+                    fontSize: "14px"
+                  },
+                  children: [
+                    "Showing first ",
+                    maxHistoryToShow,
+                    " of ",
+                    conversations.length,
+                    " conversations.",
+                    searchQuery && " Try refining your search."
+                  ]
+                }
+              )
+            ] })
+          }
+        )
+      ]
+    }
+  );
+};
+
 // src/react/themes/default/index.ts
 var defaultTheme = {
   name: "default",
@@ -27447,18 +27857,19 @@ var defaultTheme = {
   components: {
     Bubble: DefaultBubble,
     Header: DefaultHeader,
-    Input: DefaultInput
+    Input: DefaultInput,
+    HistoryPanel: DefaultHistoryPanel
   }
 };
 
 // src/react/themes/imessage/Bubble.tsx
-var import_jsx_runtime5 = __toESM(require_jsx_runtime());
+var import_jsx_runtime6 = __toESM(require_jsx_runtime());
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 function iMessageBubble({ message, isUser, timestamp }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: cn("flex flex-col gap-1", isUser ? "items-end" : "items-start"), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: cn("flex flex-col gap-1", isUser ? "items-end" : "items-start"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
       "div",
       {
         className: cn(
@@ -27468,23 +27879,23 @@ function iMessageBubble({ message, isUser, timestamp }) {
         children: message
       }
     ),
-    timestamp && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "text-[11px] text-muted-foreground px-2", children: timestamp })
+    timestamp && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "text-[11px] text-muted-foreground px-2", children: timestamp })
   ] });
 }
 
 // src/react/themes/imessage/Header.tsx
-var import_jsx_runtime6 = __toESM(require_jsx_runtime());
+var import_jsx_runtime7 = __toESM(require_jsx_runtime());
 function iMessageHeader({ name, status = "AI Assistant", buttons = [], contextInfo }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex flex-col border-b border-border bg-background/80 backdrop-blur-xl", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex items-center justify-between px-4 py-3", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "h-10 w-10 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] text-white text-sm font-medium flex items-center justify-center", children: name.slice(0, 2).toUpperCase() }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex flex-col", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "font-semibold text-[15px] text-foreground", children: name }),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "text-[12px] text-muted-foreground", children: status })
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex flex-col border-b border-border bg-background/80 backdrop-blur-xl", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center justify-between px-4 py-3", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "h-10 w-10 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] text-white text-sm font-medium flex items-center justify-center", children: name.slice(0, 2).toUpperCase() }),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex flex-col", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "font-semibold text-[15px] text-foreground", children: name }),
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "text-[12px] text-muted-foreground", children: status })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "flex items-center gap-1", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "flex items-center gap-1", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
         "button",
         {
           onClick: button.onClick,
@@ -27492,21 +27903,21 @@ function iMessageHeader({ name, status = "AI Assistant", buttons = [], contextIn
           title: button.tooltip || button.label,
           className: `text-sm font-medium px-3 py-1 rounded transition-colors ${button.variant === "primary" ? "bg-[#007AFF] text-white hover:bg-[#0066CC]" : button.variant === "danger" ? "bg-red-500 text-white hover:bg-red-600" : "text-[#007AFF] hover:text-[#0066CC] hover:bg-gray-100 dark:hover:bg-gray-700"}`,
           children: [
-            button.icon && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "mr-1", children: button.icon }),
+            button.icon && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "mr-1", children: button.icon }),
             button.label
           ]
         },
         button.id
       )) })
     ] }),
-    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "px-4 pb-3", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex items-center gap-2 text-[11px] text-muted-foreground", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { children: [
+    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "px-4 pb-3", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center gap-2 text-[11px] text-muted-foreground", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { children: [
         contextInfo.currentWords.toLocaleString(),
         "/",
         contextInfo.maxWords.toLocaleString(),
         " words"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "flex-1 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "flex-1 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
         "div",
         {
           className: "h-full transition-all duration-500 rounded-full",
@@ -27516,7 +27927,7 @@ function iMessageHeader({ name, status = "AI Assistant", buttons = [], contextIn
           }
         }
       ) }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { children: [
         contextInfo.percentage.toFixed(0),
         "%"
       ] })
@@ -27526,7 +27937,7 @@ function iMessageHeader({ name, status = "AI Assistant", buttons = [], contextIn
 
 // src/react/themes/imessage/Input.tsx
 var import_react3 = __toESM(require_react());
-var import_jsx_runtime7 = __toESM(require_jsx_runtime());
+var import_jsx_runtime8 = __toESM(require_jsx_runtime());
 function cn2(...classes) {
   return classes.filter(Boolean).join(" ");
 }
@@ -27544,8 +27955,8 @@ function MessageInput({ onSend, placeholder = "Message", disabled }) {
       handleSend();
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "flex items-end gap-3 p-4 border-t border-border bg-background/80 backdrop-blur-xl", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "relative flex-1 min-h-[42px]", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "flex items-end gap-3 p-4 border-t border-border bg-background/80 backdrop-blur-xl", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "relative flex-1 min-h-[42px]", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
       "textarea",
       {
         value: message,
@@ -27573,7 +27984,7 @@ function MessageInput({ onSend, placeholder = "Message", disabled }) {
         }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
       "button",
       {
         onClick: handleSend,
@@ -27586,11 +27997,398 @@ function MessageInput({ onSend, placeholder = "Message", disabled }) {
           top: "50%",
           transform: "translateY(-50%)"
         },
-        children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", strokeWidth: 2, children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
+        children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", strokeWidth: 2, children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
       }
     )
   ] }) });
 }
+
+// src/react/themes/imessage/HistoryPanel.tsx
+var import_jsx_runtime9 = __toESM(require_jsx_runtime());
+var iMessageHistoryPanel = ({
+  conversations,
+  searchQuery,
+  isLoading,
+  error,
+  currentConversationId,
+  onSelectConversation,
+  onNewConversation,
+  onClose,
+  onDeleteConversation,
+  onClearAllConversations,
+  onSearchChange,
+  onRetry,
+  maxHistoryToShow,
+  formatDate
+}) => {
+  const displayedConversations = conversations.slice(0, maxHistoryToShow);
+  const formatiOSDate = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1e3 * 60 * 60 * 24));
+    if (diffDays === 0) {
+      const diffMinutes = Math.floor(diffMs / (1e3 * 60));
+      if (diffMinutes < 1)
+        return "Now";
+      if (diffMinutes < 60)
+        return `${diffMinutes}m`;
+      const diffHours = Math.floor(diffMinutes / 60);
+      return `${diffHours}h`;
+    } else if (diffDays === 1) {
+      return "Yesterday";
+    } else if (diffDays < 7) {
+      return date.toLocaleDateString("en", { weekday: "long" });
+    } else {
+      return date.toLocaleDateString("en", { month: "short", day: "numeric" });
+    }
+  };
+  const getConversationPreview = (conv) => {
+    if (conv.name.length > 60) {
+      return conv.name.substring(0, 60) + "...";
+    }
+    return conv.name;
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+    "div",
+    {
+      style: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100%",
+        height: "100%",
+        margin: 0,
+        padding: 0,
+        border: "none",
+        borderRadius: 0,
+        background: "var(--background-primary)",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        boxShadow: "none",
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif'
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 20px",
+              background: "var(--background-primary)",
+              minHeight: "60px"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+                "button",
+                {
+                  onClick: onClose,
+                  style: {
+                    background: "none",
+                    border: "none",
+                    color: "#007AFF",
+                    fontSize: "17px",
+                    fontWeight: "400",
+                    cursor: "pointer",
+                    padding: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px"
+                  },
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("polyline", { points: "15,18 9,12 15,6" }) }),
+                    "Back"
+                  ]
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                "h1",
+                {
+                  style: {
+                    margin: 0,
+                    fontSize: "17px",
+                    fontWeight: "600",
+                    color: "var(--text-normal)",
+                    textAlign: "center"
+                  },
+                  children: "Conversations"
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                "button",
+                {
+                  onClick: onNewConversation,
+                  style: {
+                    background: "none",
+                    border: "none",
+                    color: "#007AFF",
+                    fontSize: "20px",
+                    fontWeight: "300",
+                    cursor: "pointer",
+                    padding: "4px",
+                    lineHeight: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  },
+                  children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("path", { d: "M12 5v14M5 12h14" }) })
+                }
+              )
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+          "div",
+          {
+            style: {
+              flex: 1,
+              overflow: "auto",
+              background: "var(--background-primary)"
+            },
+            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+              "div",
+              {
+                style: {
+                  padding: "60px 40px",
+                  textAlign: "center",
+                  color: "var(--text-muted)"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                    "div",
+                    {
+                      style: {
+                        width: "24px",
+                        height: "24px",
+                        border: "2px solid var(--background-modifier-border)",
+                        borderTop: "2px solid #007AFF",
+                        borderRadius: "50%",
+                        animation: "spin 1s linear infinite",
+                        margin: "0 auto 16px"
+                      }
+                    }
+                  ),
+                  /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { fontSize: "17px" }, children: "Loading..." })
+                ]
+              }
+            ) : error ? /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+              "div",
+              {
+                style: {
+                  padding: "60px 40px",
+                  textAlign: "center",
+                  color: "var(--text-error)"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { style: { margin: "0 0 20px", fontSize: "17px" }, children: error }),
+                  /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                    "button",
+                    {
+                      onClick: onRetry,
+                      style: {
+                        padding: "12px 24px",
+                        background: "#007AFF",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "12px",
+                        fontSize: "17px",
+                        fontWeight: "500",
+                        cursor: "pointer"
+                      },
+                      children: "Try Again"
+                    }
+                  )
+                ]
+              }
+            ) : displayedConversations.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+              "div",
+              {
+                style: {
+                  padding: "80px 40px",
+                  textAlign: "center",
+                  color: "var(--text-muted)"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                    "div",
+                    {
+                      style: {
+                        width: "80px",
+                        height: "80px",
+                        borderRadius: "50%",
+                        background: "linear-gradient(135deg, #007AFF, #5856D6)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        margin: "0 auto 20px"
+                      },
+                      children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("svg", { width: "40", height: "40", viewBox: "0 0 24 24", fill: "white", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("path", { d: "M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" }) })
+                    }
+                  ),
+                  /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { style: { fontSize: "17px", margin: "0 0 8px", fontWeight: "500" }, children: "No Messages" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { style: { fontSize: "15px", margin: 0, opacity: 0.7 }, children: searchQuery ? "No conversations match your search" : "Start a conversation to see messages here" })
+                ]
+              }
+            ) : /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { width: "100%" }, children: [
+              displayedConversations.map((conv, index) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                "div",
+                {
+                  onClick: () => onSelectConversation(conv.id),
+                  style: {
+                    padding: "12px 20px",
+                    borderBottom: index === displayedConversations.length - 1 ? "none" : "0.5px solid var(--background-modifier-border)",
+                    cursor: "pointer",
+                    background: conv.id === currentConversationId ? "#007AFF20" : "transparent",
+                    width: "100%",
+                    boxSizing: "border-box",
+                    transition: "background-color 0.2s",
+                    position: "relative"
+                  },
+                  onMouseEnter: (e) => {
+                    if (conv.id !== currentConversationId) {
+                      e.currentTarget.style.background = "var(--background-modifier-hover)";
+                    }
+                  },
+                  onMouseLeave: (e) => {
+                    if (conv.id !== currentConversationId) {
+                      e.currentTarget.style.background = "transparent";
+                    }
+                  },
+                  children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", alignItems: "flex-start", gap: "15px" }, children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                      "div",
+                      {
+                        style: {
+                          width: "50px",
+                          height: "50px",
+                          borderRadius: "50%",
+                          background: "linear-gradient(135deg, #4F8FFF, #6366F1)",
+                          color: "white",
+                          fontSize: "18px",
+                          fontWeight: "600",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0
+                        },
+                        children: "AI"
+                      }
+                    ),
+                    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "2px" }, children: [
+                        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { display: "flex", alignItems: "center", gap: "6px", flex: 1, minWidth: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                          "h3",
+                          {
+                            style: {
+                              margin: 0,
+                              fontSize: "17px",
+                              fontWeight: "500",
+                              color: "var(--text-normal)",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap"
+                            },
+                            children: conv.name
+                          }
+                        ) }),
+                        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: "8px" }, children: [
+                          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                            "span",
+                            {
+                              style: {
+                                fontSize: "15px",
+                                color: "var(--text-muted)",
+                                flexShrink: 0
+                              },
+                              children: formatiOSDate(conv.updatedAt)
+                            }
+                          ),
+                          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                            "button",
+                            {
+                              onClick: (e) => {
+                                e.stopPropagation();
+                                if (confirm("Delete this conversation?")) {
+                                  onDeleteConversation(conv.id, e);
+                                }
+                              },
+                              style: {
+                                background: "none",
+                                border: "none",
+                                color: "var(--text-faint)",
+                                cursor: "pointer",
+                                padding: "4px",
+                                borderRadius: "4px",
+                                transition: "color 0.2s",
+                                opacity: 0.5,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center"
+                              },
+                              onMouseEnter: (e) => {
+                                e.currentTarget.style.color = "#FF3B30";
+                                e.currentTarget.style.opacity = "1";
+                              },
+                              onMouseLeave: (e) => {
+                                e.currentTarget.style.color = "var(--text-faint)";
+                                e.currentTarget.style.opacity = "0.5";
+                              },
+                              title: "Delete",
+                              children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) })
+                            }
+                          )
+                        ] })
+                      ] }),
+                      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                        "p",
+                        {
+                          style: {
+                            margin: 0,
+                            fontSize: "15px",
+                            color: "var(--text-muted)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            lineHeight: "1.3"
+                          },
+                          children: getConversationPreview(conv)
+                        }
+                      )
+                    ] })
+                  ] })
+                },
+                conv.id
+              )),
+              conversations.length > maxHistoryToShow && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+                "div",
+                {
+                  style: {
+                    padding: "20px",
+                    textAlign: "center",
+                    color: "var(--text-muted)",
+                    fontSize: "15px"
+                  },
+                  children: [
+                    "Showing ",
+                    maxHistoryToShow,
+                    " of ",
+                    conversations.length,
+                    " conversations"
+                  ]
+                }
+              )
+            ] })
+          }
+        )
+      ]
+    }
+  );
+};
 
 // src/react/themes/imessage/index.ts
 var imessageTheme = {
@@ -27600,18 +28398,19 @@ var imessageTheme = {
   components: {
     Bubble: iMessageBubble,
     Header: iMessageHeader,
-    Input: MessageInput
+    Input: MessageInput,
+    HistoryPanel: iMessageHistoryPanel
   }
 };
 
 // src/react/themes/minimal/Bubble.tsx
-var import_jsx_runtime8 = __toESM(require_jsx_runtime());
+var import_jsx_runtime10 = __toESM(require_jsx_runtime());
 function cn3(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 function MinimalBubble({ message, isUser, timestamp }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: cn3("flex flex-col gap-1", isUser ? "items-end" : "items-start"), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: cn3("flex flex-col gap-1", isUser ? "items-end" : "items-start"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
       "div",
       {
         className: cn3(
@@ -27621,23 +28420,23 @@ function MinimalBubble({ message, isUser, timestamp }) {
         children: message
       }
     ),
-    timestamp && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "text-xs text-gray-500 px-1", children: timestamp })
+    timestamp && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: "text-xs text-gray-500 px-1", children: timestamp })
   ] });
 }
 
 // src/react/themes/minimal/Header.tsx
-var import_jsx_runtime9 = __toESM(require_jsx_runtime());
+var import_jsx_runtime11 = __toESM(require_jsx_runtime());
 function MinimalHeader({ name, status = "AI Assistant", buttons = [], contextInfo }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "flex flex-col border-b border-gray-200 dark:border-gray-700", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "flex items-center justify-between px-4 py-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "w-2 h-2 rounded-full bg-green-500" }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "flex flex-col", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "text-sm font-medium text-gray-700 dark:text-gray-300", children: name }),
-          status && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "text-xs text-gray-500 dark:text-gray-400", children: status })
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex flex-col border-b border-gray-200 dark:border-gray-700", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex items-center justify-between px-4 py-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "w-2 h-2 rounded-full bg-green-500" }),
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex flex-col", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "text-sm font-medium text-gray-700 dark:text-gray-300", children: name }),
+          status && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "text-xs text-gray-500 dark:text-gray-400", children: status })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "flex items-center gap-1", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "flex items-center gap-1", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
         "button",
         {
           onClick: button.onClick,
@@ -27645,21 +28444,21 @@ function MinimalHeader({ name, status = "AI Assistant", buttons = [], contextInf
           title: button.tooltip || button.label,
           className: `px-2 py-1 text-xs rounded transition-colors ${button.variant === "primary" ? "bg-blue-500 text-white hover:bg-blue-600" : button.variant === "danger" ? "bg-red-500 text-white hover:bg-red-600" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`,
           children: [
-            button.icon && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "mr-1", children: button.icon }),
+            button.icon && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "mr-1", children: button.icon }),
             button.label
           ]
         },
         button.id
       )) })
     ] }),
-    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "px-4 pb-2", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { children: [
+    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "px-4 pb-2", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { children: [
         contextInfo.currentWords.toLocaleString(),
         "/",
         contextInfo.maxWords.toLocaleString(),
         " words"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "flex-1 h-1 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "flex-1 h-1 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
         "div",
         {
           className: "h-full transition-all duration-300 rounded-full",
@@ -27669,7 +28468,7 @@ function MinimalHeader({ name, status = "AI Assistant", buttons = [], contextInf
           }
         }
       ) }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { children: [
         contextInfo.percentage.toFixed(0),
         "%"
       ] })
@@ -27679,7 +28478,7 @@ function MinimalHeader({ name, status = "AI Assistant", buttons = [], contextInf
 
 // src/react/themes/minimal/Input.tsx
 var import_react4 = __toESM(require_react());
-var import_jsx_runtime10 = __toESM(require_jsx_runtime());
+var import_jsx_runtime12 = __toESM(require_jsx_runtime());
 function MinimalInput({ onSend, placeholder = "Type a message...", disabled }) {
   const [message, setMessage] = (0, import_react4.useState)("");
   const handleSend = () => {
@@ -27694,8 +28493,8 @@ function MinimalInput({ onSend, placeholder = "Type a message...", disabled }) {
       handleSend();
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex items-center gap-2 p-3 border-t border-gray-200 dark:border-gray-700", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex items-center gap-2 p-3 border-t border-gray-200 dark:border-gray-700", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
       "textarea",
       {
         value: message,
@@ -27711,7 +28510,7 @@ function MinimalInput({ onSend, placeholder = "Type a message...", disabled }) {
         }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
       "button",
       {
         onClick: handleSend,
@@ -27723,6 +28522,391 @@ function MinimalInput({ onSend, placeholder = "Type a message...", disabled }) {
   ] });
 }
 
+// src/react/themes/minimal/HistoryPanel.tsx
+var import_jsx_runtime13 = __toESM(require_jsx_runtime());
+var MinimalHistoryPanel = ({
+  conversations,
+  searchQuery,
+  isLoading,
+  error,
+  currentConversationId,
+  onSelectConversation,
+  onNewConversation,
+  onClose,
+  onDeleteConversation,
+  onClearAllConversations,
+  onSearchChange,
+  onRetry,
+  maxHistoryToShow,
+  formatDate
+}) => {
+  const displayedConversations = conversations.slice(0, maxHistoryToShow);
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+    "div",
+    {
+      style: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100%",
+        height: "100%",
+        margin: 0,
+        padding: 0,
+        border: "none",
+        borderRadius: 0,
+        background: "var(--background-primary)",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        boxShadow: "none"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+          "div",
+          {
+            style: {
+              padding: "12px 16px",
+              borderBottom: "1px solid var(--background-modifier-border)",
+              background: "var(--background-primary)",
+              flexShrink: 0
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: "12px"
+                  },
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                      "h3",
+                      {
+                        style: {
+                          margin: 0,
+                          fontSize: "14px",
+                          fontWeight: "500",
+                          color: "var(--text-normal)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.5px"
+                        },
+                        children: "History"
+                      }
+                    ),
+                    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                      "button",
+                      {
+                        onClick: onClose,
+                        style: {
+                          background: "none",
+                          border: "none",
+                          color: "var(--text-muted)",
+                          fontSize: "14px",
+                          cursor: "pointer",
+                          padding: "2px",
+                          transition: "color 0.2s"
+                        },
+                        onMouseEnter: (e) => {
+                          e.currentTarget.style.color = "var(--text-normal)";
+                        },
+                        onMouseLeave: (e) => {
+                          e.currentTarget.style.color = "var(--text-muted)";
+                        },
+                        title: "Back",
+                        children: "\u2190"
+                      }
+                    )
+                  ]
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { marginBottom: "12px" }, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                "input",
+                {
+                  type: "text",
+                  placeholder: "Filter...",
+                  value: searchQuery,
+                  onChange: (e) => onSearchChange(e.target.value),
+                  style: {
+                    width: "100%",
+                    padding: "6px 8px",
+                    border: "1px solid var(--background-modifier-border)",
+                    borderRadius: "3px",
+                    background: "transparent",
+                    color: "var(--text-normal)",
+                    fontSize: "12px",
+                    boxSizing: "border-box"
+                  }
+                }
+              ) }),
+              /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { display: "flex", gap: "6px" }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+                  "button",
+                  {
+                    onClick: onNewConversation,
+                    style: {
+                      flex: 1,
+                      padding: "6px 8px",
+                      background: "transparent",
+                      color: "var(--text-normal)",
+                      border: "1px solid var(--background-modifier-border)",
+                      borderRadius: "3px",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "4px"
+                    },
+                    onMouseEnter: (e) => {
+                      e.currentTarget.style.background = "var(--background-modifier-hover)";
+                    },
+                    onMouseLeave: (e) => {
+                      e.currentTarget.style.background = "transparent";
+                    },
+                    children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
+                      "New"
+                    ]
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+                  "button",
+                  {
+                    onClick: onClearAllConversations,
+                    disabled: conversations.length === 0,
+                    style: {
+                      padding: "6px 8px",
+                      background: "transparent",
+                      color: conversations.length === 0 ? "var(--text-faint)" : "var(--text-normal)",
+                      border: "1px solid var(--background-modifier-border)",
+                      borderRadius: "3px",
+                      fontSize: "12px",
+                      cursor: conversations.length === 0 ? "not-allowed" : "pointer",
+                      transition: "all 0.2s",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "4px"
+                    },
+                    onMouseEnter: (e) => {
+                      if (conversations.length > 0) {
+                        e.currentTarget.style.background = "var(--background-modifier-hover)";
+                        e.currentTarget.style.color = "var(--text-error)";
+                      }
+                    },
+                    onMouseLeave: (e) => {
+                      if (conversations.length > 0) {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.color = "var(--text-normal)";
+                      }
+                    },
+                    children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) }),
+                      "Clear"
+                    ]
+                  }
+                )
+              ] })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+          "div",
+          {
+            style: {
+              flex: 1,
+              overflow: "auto",
+              background: "var(--background-primary)"
+            },
+            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+              "div",
+              {
+                style: {
+                  padding: "20px",
+                  textAlign: "center",
+                  color: "var(--text-muted)"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                    "div",
+                    {
+                      style: {
+                        width: "16px",
+                        height: "16px",
+                        border: "2px solid var(--background-modifier-border)",
+                        borderTop: "2px solid var(--interactive-accent)",
+                        borderRadius: "50%",
+                        animation: "spin 1s linear infinite",
+                        margin: "0 auto 8px"
+                      }
+                    }
+                  ),
+                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { fontSize: "12px" }, children: "Loading..." })
+                ]
+              }
+            ) : error ? /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+              "div",
+              {
+                style: {
+                  padding: "20px",
+                  textAlign: "center",
+                  color: "var(--text-error)"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("p", { style: { margin: "0 0 8px", fontSize: "12px" }, children: error }),
+                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                    "button",
+                    {
+                      onClick: onRetry,
+                      style: {
+                        padding: "4px 8px",
+                        background: "transparent",
+                        color: "var(--text-normal)",
+                        border: "1px solid var(--background-modifier-border)",
+                        borderRadius: "3px",
+                        fontSize: "12px",
+                        cursor: "pointer"
+                      },
+                      children: "Retry"
+                    }
+                  )
+                ]
+              }
+            ) : displayedConversations.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+              "div",
+              {
+                style: {
+                  padding: "40px 20px",
+                  textAlign: "center",
+                  color: "var(--text-muted)",
+                  fontSize: "12px"
+                },
+                children: searchQuery ? "No matches" : "No conversations"
+              }
+            ) : /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { width: "100%" }, children: [
+              displayedConversations.map((conv) => /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                "div",
+                {
+                  onClick: () => onSelectConversation(conv.id),
+                  style: {
+                    padding: "8px 16px",
+                    borderBottom: "1px solid var(--background-modifier-border)",
+                    cursor: "pointer",
+                    background: conv.id === currentConversationId ? "var(--background-modifier-hover)" : "transparent",
+                    borderLeft: conv.id === currentConversationId ? "2px solid var(--interactive-accent)" : "2px solid transparent",
+                    transition: "all 0.2s",
+                    width: "100%",
+                    boxSizing: "border-box"
+                  },
+                  onMouseEnter: (e) => {
+                    if (conv.id !== currentConversationId) {
+                      e.currentTarget.style.background = "var(--background-modifier-hover)";
+                    }
+                  },
+                  onMouseLeave: (e) => {
+                    if (conv.id !== currentConversationId) {
+                      e.currentTarget.style.background = "transparent";
+                    }
+                  },
+                  children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                        "h4",
+                        {
+                          style: {
+                            margin: "0 0 2px",
+                            fontSize: "13px",
+                            fontWeight: "500",
+                            color: "var(--text-normal)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap"
+                          },
+                          children: conv.name
+                        }
+                      ),
+                      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+                        "div",
+                        {
+                          style: {
+                            fontSize: "11px",
+                            color: "var(--text-muted)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px"
+                          },
+                          children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { children: formatDate(conv.updatedAt) }),
+                            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { children: "\u2022" }),
+                            /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("span", { children: [
+                              conv.messageCount,
+                              "msg"
+                            ] }),
+                            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { children: "\u2022" }),
+                            /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("span", { children: [
+                              conv.wordCount,
+                              "w"
+                            ] })
+                          ]
+                        }
+                      )
+                    ] }),
+                    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                      "button",
+                      {
+                        onClick: (e) => onDeleteConversation(conv.id, e),
+                        style: {
+                          marginLeft: "8px",
+                          padding: "2px",
+                          background: "none",
+                          border: "none",
+                          color: "var(--text-faint)",
+                          cursor: "pointer",
+                          transition: "color 0.2s"
+                        },
+                        onMouseEnter: (e) => {
+                          e.currentTarget.style.color = "var(--text-error)";
+                        },
+                        onMouseLeave: (e) => {
+                          e.currentTarget.style.color = "var(--text-faint)";
+                        },
+                        title: "Delete",
+                        children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) })
+                      }
+                    )
+                  ] })
+                },
+                conv.id
+              )),
+              conversations.length > maxHistoryToShow && /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+                "div",
+                {
+                  style: {
+                    padding: "8px 16px",
+                    textAlign: "center",
+                    color: "var(--text-muted)",
+                    fontSize: "11px"
+                  },
+                  children: [
+                    "+",
+                    conversations.length - maxHistoryToShow,
+                    " more"
+                  ]
+                }
+              )
+            ] })
+          }
+        )
+      ]
+    }
+  );
+};
+
 // src/react/themes/minimal/index.ts
 var minimalTheme = {
   name: "minimal",
@@ -27731,7 +28915,8 @@ var minimalTheme = {
   components: {
     Bubble: MinimalBubble,
     Header: MinimalHeader,
-    Input: MinimalInput
+    Input: MinimalInput,
+    HistoryPanel: MinimalHistoryPanel
   }
 };
 
@@ -27786,13 +28971,13 @@ AvatarGenerator.colors = [
 AvatarGenerator.avatarCache = /* @__PURE__ */ new Map();
 
 // src/react/themes/discord/Bubble.tsx
-var import_jsx_runtime11 = __toESM(require_jsx_runtime());
+var import_jsx_runtime14 = __toESM(require_jsx_runtime());
 function DiscordBubble({ message, isUser, timestamp }) {
   const userAvatar = AvatarGenerator.generateAvatar("user", "You");
   const aiAvatar = AvatarGenerator.generateAvatar("ai-assistant", "AI Assistant");
   const avatar = isUser ? userAvatar : aiAvatar;
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex gap-4 py-2 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded-md", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "flex gap-4 py-2 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded-md", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
       "div",
       {
         className: "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm",
@@ -27800,28 +28985,28 @@ function DiscordBubble({ message, isUser, timestamp }) {
         children: avatar.initials
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex-1 min-w-0", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex items-baseline gap-3 mb-1", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "font-semibold text-gray-900 dark:text-gray-100 text-sm", children: isUser ? "You" : "AI Assistant" }),
-        timestamp && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "text-xs text-gray-500 dark:text-gray-400 font-medium", children: timestamp })
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "flex-1 min-w-0", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "flex items-baseline gap-3 mb-1", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "font-semibold text-gray-900 dark:text-gray-100 text-sm", children: isUser ? "You" : "AI Assistant" }),
+        timestamp && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "text-xs text-gray-500 dark:text-gray-400 font-medium", children: timestamp })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "text-gray-800 dark:text-gray-200 text-sm leading-relaxed pr-4", children: message })
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: "text-gray-800 dark:text-gray-200 text-sm leading-relaxed pr-4", children: message })
     ] })
   ] });
 }
 
 // src/react/themes/discord/Header.tsx
-var import_jsx_runtime12 = __toESM(require_jsx_runtime());
+var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 function DiscordHeader({ name, status = "AI Assistant", buttons = [], contextInfo }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex flex-col bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex items-center justify-between px-4 py-3", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "text-gray-600 dark:text-gray-400 text-lg", children: "#" }),
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "font-semibold text-gray-900 dark:text-gray-100", children: name }),
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "w-px h-6 bg-gray-300 dark:bg-gray-600" }),
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "text-sm text-gray-500 dark:text-gray-400", children: status })
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "flex flex-col bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "flex items-center justify-between px-4 py-3", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "text-gray-600 dark:text-gray-400 text-lg", children: "#" }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "font-semibold text-gray-900 dark:text-gray-100", children: name }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "w-px h-6 bg-gray-300 dark:bg-gray-600" }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "text-sm text-gray-500 dark:text-gray-400", children: status })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "flex items-center gap-1", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "flex items-center gap-1", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
         "button",
         {
           onClick: button.onClick,
@@ -27829,21 +29014,21 @@ function DiscordHeader({ name, status = "AI Assistant", buttons = [], contextInf
           title: button.tooltip || button.label,
           className: `text-sm px-3 py-1.5 rounded transition-colors font-medium ${button.variant === "primary" ? "bg-blue-600 text-white hover:bg-blue-700" : button.variant === "danger" ? "bg-red-600 text-white hover:bg-red-700" : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"}`,
           children: [
-            button.icon && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "mr-1", children: button.icon }),
+            button.icon && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "mr-1", children: button.icon }),
             button.label
           ]
         },
         button.id
       )) })
     ] }),
-    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "px-4 pb-3", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("span", { children: [
+    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "px-4 pb-3", children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { children: [
         contextInfo.currentWords.toLocaleString(),
         "/",
         contextInfo.maxWords.toLocaleString(),
         " words"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "flex-1 h-1.5 bg-gray-300 dark:bg-gray-600 rounded overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "flex-1 h-1.5 bg-gray-300 dark:bg-gray-600 rounded overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
         "div",
         {
           className: "h-full transition-all duration-300 rounded",
@@ -27853,7 +29038,7 @@ function DiscordHeader({ name, status = "AI Assistant", buttons = [], contextInf
           }
         }
       ) }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("span", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { children: [
         contextInfo.percentage.toFixed(0),
         "%"
       ] })
@@ -27863,7 +29048,7 @@ function DiscordHeader({ name, status = "AI Assistant", buttons = [], contextInf
 
 // src/react/themes/discord/Input.tsx
 var import_react5 = __toESM(require_react());
-var import_jsx_runtime13 = __toESM(require_jsx_runtime());
+var import_jsx_runtime16 = __toESM(require_jsx_runtime());
 function DiscordInput({ onSend, placeholder = "Message #ai-assistant", disabled }) {
   const [message, setMessage] = (0, import_react5.useState)("");
   const handleSend = () => {
@@ -27878,8 +29063,8 @@ function DiscordInput({ onSend, placeholder = "Message #ai-assistant", disabled 
       handleSend();
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: "flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
       "textarea",
       {
         value: message,
@@ -27900,17 +29085,453 @@ function DiscordInput({ onSend, placeholder = "Message #ai-assistant", disabled 
         }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
       "button",
       {
         onClick: handleSend,
         disabled: !message.trim() || disabled,
         className: "p-2.5 rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex-shrink-0",
-        children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", strokeWidth: 2, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
+        children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", strokeWidth: 2, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
       }
     )
   ] });
 }
+
+// src/react/themes/discord/HistoryPanel.tsx
+var import_jsx_runtime17 = __toESM(require_jsx_runtime());
+var DiscordHistoryPanel = ({
+  conversations,
+  searchQuery,
+  isLoading,
+  error,
+  currentConversationId,
+  onSelectConversation,
+  onNewConversation,
+  onClose,
+  onDeleteConversation,
+  onClearAllConversations,
+  onSearchChange,
+  onRetry,
+  maxHistoryToShow,
+  formatDate
+}) => {
+  const displayedConversations = conversations.slice(0, maxHistoryToShow);
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+    "div",
+    {
+      style: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100%",
+        height: "100%",
+        margin: 0,
+        padding: 0,
+        border: "none",
+        borderRadius: 0,
+        background: "var(--background-primary)",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        boxShadow: "none",
+        fontFamily: '"Segoe UI", system-ui, sans-serif'
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+          "div",
+          {
+            style: {
+              padding: "16px",
+              borderBottom: "1px solid var(--background-modifier-border)",
+              background: "var(--background-secondary)",
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: "12px" }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                  "div",
+                  {
+                    style: {
+                      width: "24px",
+                      height: "24px",
+                      background: "#5865f2",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    },
+                    children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "white", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { d: "M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.197.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z" }) })
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                  "h3",
+                  {
+                    style: {
+                      margin: 0,
+                      fontSize: "16px",
+                      fontWeight: "600",
+                      color: "var(--text-normal)"
+                    },
+                    children: "Message History"
+                  }
+                )
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                "button",
+                {
+                  onClick: onClose,
+                  style: {
+                    background: "none",
+                    border: "none",
+                    color: "var(--text-muted)",
+                    fontSize: "20px",
+                    cursor: "pointer",
+                    padding: "4px",
+                    borderRadius: "4px",
+                    transition: "all 0.2s",
+                    lineHeight: 1
+                  },
+                  onMouseEnter: (e) => {
+                    e.currentTarget.style.color = "var(--text-normal)";
+                    e.currentTarget.style.background = "var(--background-modifier-hover)";
+                  },
+                  onMouseLeave: (e) => {
+                    e.currentTarget.style.color = "var(--text-muted)";
+                    e.currentTarget.style.background = "none";
+                  },
+                  title: "Close",
+                  children: "\u2715"
+                }
+              )
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { padding: "16px", borderBottom: "1px solid var(--background-modifier-border)" }, children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+          "input",
+          {
+            type: "text",
+            placeholder: "Search conversations...",
+            value: searchQuery,
+            onChange: (e) => onSearchChange(e.target.value),
+            style: {
+              width: "100%",
+              padding: "8px 12px",
+              border: "1px solid var(--background-modifier-border)",
+              borderRadius: "4px",
+              background: "var(--background-secondary)",
+              color: "var(--text-normal)",
+              fontSize: "14px",
+              boxSizing: "border-box"
+            }
+          }
+        ) }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { padding: "16px", borderBottom: "1px solid var(--background-modifier-border)", display: "flex", gap: "8px" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+            "button",
+            {
+              onClick: onNewConversation,
+              style: {
+                flex: 1,
+                padding: "8px 12px",
+                background: "#5865f2",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                fontSize: "14px",
+                fontWeight: "500",
+                cursor: "pointer",
+                transition: "background-color 0.2s",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px"
+              },
+              onMouseEnter: (e) => {
+                e.currentTarget.style.background = "#4752c4";
+              },
+              onMouseLeave: (e) => {
+                e.currentTarget.style.background = "#5865f2";
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
+                "New Chat"
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+            "button",
+            {
+              onClick: onClearAllConversations,
+              disabled: conversations.length === 0,
+              style: {
+                padding: "8px 12px",
+                background: conversations.length === 0 ? "var(--background-modifier-border)" : "#ed4245",
+                color: conversations.length === 0 ? "var(--text-faint)" : "white",
+                border: "none",
+                borderRadius: "4px",
+                fontSize: "14px",
+                fontWeight: "500",
+                cursor: conversations.length === 0 ? "not-allowed" : "pointer",
+                transition: "background-color 0.2s",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px"
+              },
+              onMouseEnter: (e) => {
+                if (conversations.length > 0) {
+                  e.currentTarget.style.background = "#c23636";
+                }
+              },
+              onMouseLeave: (e) => {
+                if (conversations.length > 0) {
+                  e.currentTarget.style.background = "#ed4245";
+                }
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) }),
+                "Clear All"
+              ]
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+          "div",
+          {
+            style: {
+              flex: 1,
+              overflow: "auto",
+              background: "var(--background-primary)"
+            },
+            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+              "div",
+              {
+                style: {
+                  padding: "40px",
+                  textAlign: "center",
+                  color: "var(--text-muted)"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                    "div",
+                    {
+                      style: {
+                        width: "24px",
+                        height: "24px",
+                        border: "2px solid var(--background-modifier-border)",
+                        borderTop: "2px solid #5865f2",
+                        borderRadius: "50%",
+                        animation: "spin 1s linear infinite",
+                        margin: "0 auto 16px"
+                      }
+                    }
+                  ),
+                  "Loading..."
+                ]
+              }
+            ) : error ? /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+              "div",
+              {
+                style: {
+                  padding: "40px",
+                  textAlign: "center",
+                  color: "#ed4245"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("p", { style: { margin: "0 0 16px" }, children: error }),
+                  /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                    "button",
+                    {
+                      onClick: onRetry,
+                      style: {
+                        padding: "6px 12px",
+                        background: "#5865f2",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        fontSize: "14px",
+                        cursor: "pointer"
+                      },
+                      children: "Retry"
+                    }
+                  )
+                ]
+              }
+            ) : displayedConversations.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+              "div",
+              {
+                style: {
+                  padding: "40px",
+                  textAlign: "center",
+                  color: "var(--text-muted)"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                    "div",
+                    {
+                      style: {
+                        width: "48px",
+                        height: "48px",
+                        background: "#5865f2",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        margin: "0 auto 16px"
+                      },
+                      children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("svg", { width: "24", height: "24", viewBox: "0 0 24 24", fill: "white", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { d: "M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" }) })
+                    }
+                  ),
+                  searchQuery ? "No conversations match your search." : "No saved conversations yet."
+                ]
+              }
+            ) : /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { width: "100%" }, children: [
+              displayedConversations.map((conv) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                "div",
+                {
+                  onClick: () => onSelectConversation(conv.id),
+                  style: {
+                    padding: "12px 16px",
+                    borderBottom: "1px solid var(--background-modifier-border)",
+                    cursor: "pointer",
+                    background: conv.id === currentConversationId ? "var(--background-modifier-hover)" : "transparent",
+                    borderLeft: conv.id === currentConversationId ? "4px solid #5865f2" : "4px solid transparent",
+                    transition: "all 0.2s",
+                    width: "100%",
+                    boxSizing: "border-box"
+                  },
+                  onMouseEnter: (e) => {
+                    if (conv.id !== currentConversationId) {
+                      e.currentTarget.style.background = "var(--background-modifier-hover)";
+                    }
+                  },
+                  onMouseLeave: (e) => {
+                    if (conv.id !== currentConversationId) {
+                      e.currentTarget.style.background = "transparent";
+                    }
+                  },
+                  children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: "12px" }, children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                      "div",
+                      {
+                        style: {
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "50%",
+                          background: "linear-gradient(135deg, #5865f2, #7289da)",
+                          color: "white",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0
+                        },
+                        children: "AI"
+                      }
+                    ),
+                    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                        "h4",
+                        {
+                          style: {
+                            margin: "0 0 4px",
+                            fontSize: "14px",
+                            fontWeight: "500",
+                            color: "var(--text-normal)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap"
+                          },
+                          children: conv.name
+                        }
+                      ),
+                      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+                        "div",
+                        {
+                          style: {
+                            fontSize: "12px",
+                            color: "var(--text-muted)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px"
+                          },
+                          children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { children: formatDate(conv.updatedAt) }),
+                            /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { width: "3px", height: "3px", borderRadius: "50%", background: "currentColor" } }),
+                            /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { children: [
+                              conv.messageCount,
+                              " messages"
+                            ] }),
+                            /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { width: "3px", height: "3px", borderRadius: "50%", background: "currentColor" } }),
+                            /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { children: [
+                              conv.wordCount,
+                              " words"
+                            ] })
+                          ]
+                        }
+                      )
+                    ] }),
+                    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                      "button",
+                      {
+                        onClick: (e) => onDeleteConversation(conv.id, e),
+                        style: {
+                          marginLeft: "8px",
+                          padding: "4px",
+                          background: "none",
+                          border: "none",
+                          color: "var(--text-faint)",
+                          cursor: "pointer",
+                          borderRadius: "4px",
+                          transition: "all 0.2s"
+                        },
+                        onMouseEnter: (e) => {
+                          e.currentTarget.style.color = "#ed4245";
+                          e.currentTarget.style.background = "rgba(237, 66, 69, 0.1)";
+                        },
+                        onMouseLeave: (e) => {
+                          e.currentTarget.style.color = "var(--text-faint)";
+                          e.currentTarget.style.background = "none";
+                        },
+                        title: "Delete conversation",
+                        children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) })
+                      }
+                    )
+                  ] })
+                },
+                conv.id
+              )),
+              conversations.length > maxHistoryToShow && /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+                "div",
+                {
+                  style: {
+                    padding: "16px",
+                    textAlign: "center",
+                    color: "var(--text-muted)",
+                    fontSize: "12px"
+                  },
+                  children: [
+                    "Showing first ",
+                    maxHistoryToShow,
+                    " of ",
+                    conversations.length,
+                    " conversations"
+                  ]
+                }
+              )
+            ] })
+          }
+        )
+      ]
+    }
+  );
+};
 
 // src/react/themes/discord/index.ts
 var discordTheme = {
@@ -27920,7 +29541,8 @@ var discordTheme = {
   components: {
     Bubble: DiscordBubble,
     Header: DiscordHeader,
-    Input: DiscordInput
+    Input: DiscordInput,
+    HistoryPanel: DiscordHistoryPanel
   }
 };
 
@@ -28162,468 +29784,31 @@ var ConversationManager = class {
   }
 };
 
-// src/react/ConversationHistoryPanel.tsx
-var import_react6 = __toESM(require_react());
-var import_jsx_runtime14 = __toESM(require_jsx_runtime());
-var ConversationHistoryPanel = ({
-  onSelectConversation,
-  onNewConversation,
-  onClose,
-  currentConversationId
-}) => {
+// src/react/ChatInterface.tsx
+var import_jsx_runtime18 = __toESM(require_jsx_runtime());
+var ChatInterface = () => {
+  const [messages, setMessages] = (0, import_react6.useState)([]);
+  const [isProcessing, setIsProcessing] = (0, import_react6.useState)(false);
+  const [currentTheme, setCurrentTheme] = (0, import_react6.useState)("default");
+  const [currentConversationId, setCurrentConversationId] = (0, import_react6.useState)(null);
+  const [contextInfo, setContextInfo] = (0, import_react6.useState)({ currentWords: 0, maxWords: 8e3, percentage: 0 });
+  const [showHistoryPanel, setShowHistoryPanel] = (0, import_react6.useState)(false);
   const [conversations, setConversations] = (0, import_react6.useState)([]);
-  const [searchQuery, setSearchQuery] = (0, import_react6.useState)("");
-  const [isLoading, setIsLoading] = (0, import_react6.useState)(true);
-  const [error, setError] = (0, import_react6.useState)(null);
+  const [isLoadingConversations, setIsLoadingConversations] = (0, import_react6.useState)(false);
+  const [conversationError, setConversationError] = (0, import_react6.useState)(null);
+  const [historySearchQuery, setHistorySearchQuery] = (0, import_react6.useState)("");
+  const messagesEndRef = (0, import_react6.useRef)(null);
+  const aiService = useAIService();
+  const settingsManager = useSettings();
   const app = useApp();
-  const settings = useSettings();
   const conversationManager = import_react6.default.useMemo(() => {
     return ConversationManager.getInstance(app);
   }, [app]);
   (0, import_react6.useEffect)(() => {
-    loadConversations();
-  }, []);
-  const loadConversations = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      console.log("=== CONVERSATION HISTORY: Loading conversations ===");
-      const metadata = await conversationManager.getConversationMetadata();
-      setConversations(metadata);
-      console.log(`=== CONVERSATION HISTORY: Loaded ${metadata.length} conversations ===`);
-    } catch (err) {
-      console.error("=== CONVERSATION HISTORY: Error loading conversations:", err);
-      setError("Failed to load conversations");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  const handleDeleteConversation = async (conversationId, event) => {
-    event.stopPropagation();
-    try {
-      console.log(`=== CONVERSATION HISTORY: Deleting conversation ${conversationId} ===`);
-      await conversationManager.deleteConversation(conversationId);
-      await loadConversations();
-      if (conversationId === currentConversationId) {
-        onNewConversation();
-      }
-    } catch (err) {
-      console.error("=== CONVERSATION HISTORY: Error deleting conversation:", err);
-      setError("Failed to delete conversation");
-    }
-  };
-  const handleClearAllConversations = async () => {
-    if (!confirm("Are you sure you want to delete all conversations? This action cannot be undone.")) {
-      return;
-    }
-    try {
-      console.log("=== CONVERSATION HISTORY: Clearing all conversations ===");
-      await conversationManager.clearAllConversations();
-      setConversations([]);
-      onNewConversation();
-    } catch (err) {
-      console.error("=== CONVERSATION HISTORY: Error clearing conversations:", err);
-      setError("Failed to clear conversations");
-    }
-  };
-  const formatDate = (timestamp) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1e3 * 60 * 60 * 24));
-    if (diffDays === 0) {
-      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    } else if (diffDays === 1) {
-      return "Yesterday";
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else {
-      return date.toLocaleDateString();
-    }
-  };
-  const filteredConversations = conversations.filter(
-    (conv) => conv.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  const settingsData = settings.getSettings();
-  const maxHistoryToShow = settingsData.maxConversationHistory || 50;
-  const displayedConversations = filteredConversations.slice(0, maxHistoryToShow);
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
-    "div",
-    {
-      style: {
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: "100%",
-        height: "100%",
-        margin: 0,
-        padding: 0,
-        border: "none",
-        borderRadius: 0,
-        background: "var(--background-primary)",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        boxShadow: "none"
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
-          "div",
-          {
-            style: {
-              padding: "16px 20px",
-              borderBottom: "1px solid var(--background-modifier-border)",
-              background: "var(--background-primary)",
-              flexShrink: 0
-            },
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
-                "div",
-                {
-                  style: {
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: "16px"
-                  },
-                  children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-                      "h3",
-                      {
-                        style: {
-                          margin: 0,
-                          fontSize: "18px",
-                          fontWeight: "600",
-                          color: "var(--text-normal)"
-                        },
-                        children: "Conversation History"
-                      }
-                    ),
-                    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-                      "button",
-                      {
-                        onClick: onClose,
-                        style: {
-                          background: "none",
-                          border: "none",
-                          color: "var(--text-muted)",
-                          fontSize: "18px",
-                          cursor: "pointer",
-                          padding: "4px 8px",
-                          borderRadius: "4px",
-                          transition: "all 0.2s"
-                        },
-                        onMouseEnter: (e) => {
-                          e.currentTarget.style.color = "var(--text-normal)";
-                          e.currentTarget.style.background = "var(--background-modifier-hover)";
-                        },
-                        onMouseLeave: (e) => {
-                          e.currentTarget.style.color = "var(--text-muted)";
-                          e.currentTarget.style.background = "none";
-                        },
-                        title: "Back to chat",
-                        children: "\u2190"
-                      }
-                    )
-                  ]
-                }
-              ),
-              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { marginBottom: "16px" }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-                "input",
-                {
-                  type: "text",
-                  placeholder: "Search conversations...",
-                  value: searchQuery,
-                  onChange: (e) => setSearchQuery(e.target.value),
-                  style: {
-                    width: "100%",
-                    padding: "8px 12px",
-                    border: "1px solid var(--background-modifier-border)",
-                    borderRadius: "6px",
-                    background: "var(--background-primary)",
-                    color: "var(--text-normal)",
-                    fontSize: "14px",
-                    boxSizing: "border-box"
-                  }
-                }
-              ) }),
-              /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { display: "flex", gap: "8px" }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-                  "button",
-                  {
-                    onClick: onNewConversation,
-                    style: {
-                      flex: 1,
-                      padding: "8px 12px",
-                      background: "var(--interactive-accent)",
-                      color: "var(--text-on-accent)",
-                      border: "none",
-                      borderRadius: "6px",
-                      fontSize: "14px",
-                      cursor: "pointer",
-                      transition: "background-color 0.2s"
-                    },
-                    onMouseEnter: (e) => {
-                      e.currentTarget.style.background = "var(--interactive-accent-hover)";
-                    },
-                    onMouseLeave: (e) => {
-                      e.currentTarget.style.background = "var(--interactive-accent)";
-                    },
-                    children: "\u2795 New Chat"
-                  }
-                ),
-                /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-                  "button",
-                  {
-                    onClick: handleClearAllConversations,
-                    disabled: conversations.length === 0,
-                    style: {
-                      padding: "8px 12px",
-                      background: conversations.length === 0 ? "var(--background-modifier-border)" : "#dc3545",
-                      color: conversations.length === 0 ? "var(--text-faint)" : "white",
-                      border: "none",
-                      borderRadius: "6px",
-                      fontSize: "14px",
-                      cursor: conversations.length === 0 ? "not-allowed" : "pointer",
-                      transition: "background-color 0.2s"
-                    },
-                    onMouseEnter: (e) => {
-                      if (conversations.length > 0) {
-                        e.currentTarget.style.background = "#c82333";
-                      }
-                    },
-                    onMouseLeave: (e) => {
-                      if (conversations.length > 0) {
-                        e.currentTarget.style.background = "#dc3545";
-                      }
-                    },
-                    children: "\u{1F5D1}\uFE0F Clear All"
-                  }
-                )
-              ] })
-            ]
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-          "div",
-          {
-            style: {
-              flex: 1,
-              overflow: "auto",
-              background: "var(--background-primary)"
-            },
-            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
-              "div",
-              {
-                style: {
-                  padding: "40px",
-                  textAlign: "center",
-                  color: "var(--text-muted)"
-                },
-                children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-                    "div",
-                    {
-                      style: {
-                        width: "24px",
-                        height: "24px",
-                        border: "2px solid var(--background-modifier-border)",
-                        borderTop: "2px solid var(--interactive-accent)",
-                        borderRadius: "50%",
-                        animation: "spin 1s linear infinite",
-                        margin: "0 auto 16px"
-                      }
-                    }
-                  ),
-                  "Loading conversations..."
-                ]
-              }
-            ) : error ? /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
-              "div",
-              {
-                style: {
-                  padding: "40px",
-                  textAlign: "center",
-                  color: "var(--text-error)"
-                },
-                children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { style: { margin: "0 0 16px" }, children: error }),
-                  /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-                    "button",
-                    {
-                      onClick: loadConversations,
-                      style: {
-                        padding: "6px 12px",
-                        background: "var(--interactive-accent)",
-                        color: "var(--text-on-accent)",
-                        border: "none",
-                        borderRadius: "4px",
-                        fontSize: "14px",
-                        cursor: "pointer"
-                      },
-                      children: "Retry"
-                    }
-                  )
-                ]
-              }
-            ) : displayedConversations.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-              "div",
-              {
-                style: {
-                  padding: "40px",
-                  textAlign: "center",
-                  color: "var(--text-muted)"
-                },
-                children: searchQuery ? "No conversations match your search." : "No saved conversations yet."
-              }
-            ) : /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { width: "100%" }, children: [
-              displayedConversations.map((conv) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-                "div",
-                {
-                  onClick: () => onSelectConversation(conv.id),
-                  style: {
-                    padding: "16px 20px",
-                    borderBottom: "1px solid var(--background-modifier-border)",
-                    cursor: "pointer",
-                    background: conv.id === currentConversationId ? "var(--background-modifier-hover)" : "transparent",
-                    borderLeft: conv.id === currentConversationId ? "3px solid var(--interactive-accent)" : "3px solid transparent",
-                    transition: "all 0.2s",
-                    width: "100%",
-                    boxSizing: "border-box"
-                  },
-                  onMouseEnter: (e) => {
-                    if (conv.id !== currentConversationId) {
-                      e.currentTarget.style.background = "var(--background-modifier-hover)";
-                    }
-                  },
-                  onMouseLeave: (e) => {
-                    if (conv.id !== currentConversationId) {
-                      e.currentTarget.style.background = "transparent";
-                    }
-                  },
-                  children: /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { display: "flex", alignItems: "flex-start", justifyContent: "space-between" }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-                        "h4",
-                        {
-                          style: {
-                            margin: "0 0 6px",
-                            fontSize: "15px",
-                            fontWeight: "500",
-                            color: "var(--text-normal)",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap"
-                          },
-                          children: conv.name
-                        }
-                      ),
-                      /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
-                        "div",
-                        {
-                          style: {
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "12px",
-                            fontSize: "12px",
-                            color: "var(--text-muted)"
-                          },
-                          children: [
-                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: formatDate(conv.updatedAt) }),
-                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: "\u2022" }),
-                            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { children: [
-                              conv.messageCount,
-                              " messages"
-                            ] }),
-                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: "\u2022" }),
-                            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { children: [
-                              conv.wordCount,
-                              " words"
-                            ] })
-                          ]
-                        }
-                      )
-                    ] }),
-                    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-                      "button",
-                      {
-                        onClick: (e) => handleDeleteConversation(conv.id, e),
-                        style: {
-                          marginLeft: "12px",
-                          padding: "4px",
-                          background: "none",
-                          border: "none",
-                          color: "var(--text-faint)",
-                          cursor: "pointer",
-                          borderRadius: "4px",
-                          transition: "all 0.2s"
-                        },
-                        onMouseEnter: (e) => {
-                          e.currentTarget.style.color = "var(--text-error)";
-                          e.currentTarget.style.background = "var(--background-modifier-error-hover)";
-                        },
-                        onMouseLeave: (e) => {
-                          e.currentTarget.style.color = "var(--text-faint)";
-                          e.currentTarget.style.background = "none";
-                        },
-                        title: "Delete conversation",
-                        children: "\u{1F5D1}\uFE0F"
-                      }
-                    )
-                  ] })
-                },
-                conv.id
-              )),
-              filteredConversations.length > maxHistoryToShow && /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
-                "div",
-                {
-                  style: {
-                    padding: "16px 20px",
-                    textAlign: "center",
-                    color: "var(--text-muted)",
-                    fontSize: "14px"
-                  },
-                  children: [
-                    "Showing first ",
-                    maxHistoryToShow,
-                    " of ",
-                    filteredConversations.length,
-                    " conversations.",
-                    searchQuery && " Try refining your search."
-                  ]
-                }
-              )
-            ] })
-          }
-        )
-      ]
-    }
-  );
-};
-
-// src/react/ChatInterface.tsx
-var import_jsx_runtime15 = __toESM(require_jsx_runtime());
-var ChatInterface = () => {
-  const [messages, setMessages] = (0, import_react7.useState)([]);
-  const [isProcessing, setIsProcessing] = (0, import_react7.useState)(false);
-  const [currentTheme, setCurrentTheme] = (0, import_react7.useState)("default");
-  const [currentConversationId, setCurrentConversationId] = (0, import_react7.useState)(null);
-  const [contextInfo, setContextInfo] = (0, import_react7.useState)({ currentWords: 0, maxWords: 8e3, percentage: 0 });
-  const [showHistoryPanel, setShowHistoryPanel] = (0, import_react7.useState)(false);
-  const messagesEndRef = (0, import_react7.useRef)(null);
-  const aiService = useAIService();
-  const settingsManager = useSettings();
-  const app = useApp();
-  const conversationManager = import_react7.default.useMemo(() => {
-    return ConversationManager.getInstance(app);
-  }, [app]);
-  (0, import_react7.useEffect)(() => {
     var _a;
     (_a = messagesEndRef.current) == null ? void 0 : _a.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-  (0, import_react7.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     const settings2 = settingsManager.getSettings();
     if (settings2.enableContextTracking) {
       const wordCount = messages.reduce((total, msg) => {
@@ -28642,7 +29827,7 @@ var ChatInterface = () => {
       console.log(`=== CHAT INTERFACE: Context tracking - ${wordCount}/${maxWords} words (${percentage.toFixed(1)}%) ===`);
     }
   }, [messages, settingsManager]);
-  (0, import_react7.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     const settings2 = settingsManager.getSettings();
     const newTheme = settings2.chatTheme || "default";
     console.log("=== CHAT INTERFACE: Theme change detected:", newTheme);
@@ -28653,18 +29838,18 @@ var ChatInterface = () => {
       console.log("=== CHAT INTERFACE: Theme state updated to:", newTheme);
     }
   }, [settingsManager, currentTheme]);
-  (0, import_react7.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     const settings2 = settingsManager.getSettings();
     const initialTheme = settings2.chatTheme || "default";
     console.log("=== CHAT INTERFACE: Initial theme:", initialTheme);
     console.log("=== CHAT INTERFACE: Component mounted with theme:", initialTheme);
     setCurrentTheme(initialTheme);
   }, []);
-  (0, import_react7.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     console.log("=== CHAT INTERFACE: currentTheme state changed to:", currentTheme);
     console.log("=== CHAT INTERFACE: Will use container class:", currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`);
   }, [currentTheme]);
-  (0, import_react7.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     const settings2 = settingsManager.getSettings();
     const providerName = getProviderDisplayName(settings2.aiProvider);
     setMessages([{
@@ -28674,7 +29859,7 @@ var ChatInterface = () => {
       timestamp: new Date()
     }]);
   }, [settingsManager]);
-  (0, import_react7.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     const settings2 = settingsManager.getSettings();
     if (settings2.autoSaveConversations && messages.length > 1) {
       saveCurrentConversation();
@@ -28752,9 +29937,27 @@ var ChatInterface = () => {
     setShowHistoryPanel(false);
     console.log("=== CHAT INTERFACE: Started new chat ===");
   };
-  const toggleHistory = () => {
+  const toggleHistory = async () => {
+    if (!showHistoryPanel) {
+      await loadConversations();
+    }
     setShowHistoryPanel(!showHistoryPanel);
     console.log(`=== CHAT INTERFACE: History panel ${!showHistoryPanel ? "opened" : "closed"} ===`);
+  };
+  const loadConversations = async () => {
+    try {
+      setIsLoadingConversations(true);
+      setConversationError(null);
+      console.log("=== CHAT INTERFACE: Loading conversations for history ===");
+      const metadata = await conversationManager.getConversationMetadata();
+      setConversations(metadata);
+      console.log(`=== CHAT INTERFACE: Loaded ${metadata.length} conversations for history ===`);
+    } catch (err) {
+      console.error("=== CHAT INTERFACE: Error loading conversations:", err);
+      setConversationError("Failed to load conversations");
+    } finally {
+      setIsLoadingConversations(false);
+    }
   };
   const handleConversationSelect = async (conversationId) => {
     const settings2 = settingsManager.getSettings();
@@ -28763,6 +29966,49 @@ var ChatInterface = () => {
     }
     await loadConversation(conversationId);
     setShowHistoryPanel(false);
+  };
+  const handleDeleteConversation = async (conversationId, event) => {
+    event.stopPropagation();
+    try {
+      console.log(`=== CHAT INTERFACE: Deleting conversation ${conversationId} ===`);
+      await conversationManager.deleteConversation(conversationId);
+      await loadConversations();
+      if (conversationId === currentConversationId) {
+        await startNewChat();
+      }
+    } catch (err) {
+      console.error("=== CHAT INTERFACE: Error deleting conversation:", err);
+      setConversationError("Failed to delete conversation");
+    }
+  };
+  const handleClearAllConversations = async () => {
+    if (!confirm("Are you sure you want to delete all conversations? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      console.log("=== CHAT INTERFACE: Clearing all conversations ===");
+      await conversationManager.clearAllConversations();
+      setConversations([]);
+      await startNewChat();
+    } catch (err) {
+      console.error("=== CHAT INTERFACE: Error clearing conversations:", err);
+      setConversationError("Failed to clear conversations");
+    }
+  };
+  const formatDate = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1e3 * 60 * 60 * 24));
+    if (diffDays === 0) {
+      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    } else if (diffDays === 1) {
+      return "Yesterday";
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
   };
   const trimMessagesForContext = (messages2) => {
     const settings2 = settingsManager.getSettings();
@@ -28846,40 +30092,113 @@ var ChatInterface = () => {
       setIsProcessing(false);
     }
   };
-  const headerButtons = [
-    {
-      id: "new-chat",
-      label: "New Chat",
-      icon: "\u2795",
-      onClick: startNewChat,
-      variant: "primary",
-      tooltip: "Start a new conversation"
-    },
-    {
-      id: "history",
-      label: "History",
-      icon: "\u{1F4DA}",
-      onClick: toggleHistory,
-      variant: "secondary",
-      tooltip: showHistoryPanel ? "Close conversation history" : "View conversation history"
+  const getHeaderButtons = () => {
+    const baseButtons = [];
+    if (currentTheme === "imessage") {
+      baseButtons.push({
+        id: "new-chat",
+        label: "",
+        icon: "\u270F\uFE0F",
+        onClick: startNewChat,
+        variant: "primary",
+        tooltip: "New message"
+      });
+    } else if (currentTheme === "discord") {
+      baseButtons.push({
+        id: "new-chat",
+        label: "",
+        icon: "\u{1F4AC}",
+        onClick: startNewChat,
+        variant: "primary",
+        tooltip: "New chat"
+      });
+    } else if (currentTheme === "minimal") {
+      baseButtons.push({
+        id: "new-chat",
+        label: "",
+        icon: "+",
+        onClick: startNewChat,
+        variant: "primary",
+        tooltip: "New"
+      });
+    } else {
+      baseButtons.push({
+        id: "new-chat",
+        label: "",
+        icon: "\u2795",
+        onClick: startNewChat,
+        variant: "primary",
+        tooltip: "Start a new conversation"
+      });
     }
-  ];
+    if (currentTheme === "imessage") {
+      baseButtons.push({
+        id: "history",
+        label: "",
+        icon: "\u{1F550}",
+        onClick: toggleHistory,
+        variant: "secondary",
+        tooltip: showHistoryPanel ? "Close" : "History"
+      });
+    } else if (currentTheme === "discord") {
+      baseButtons.push({
+        id: "history",
+        label: "",
+        icon: "\u{1F4DC}",
+        onClick: toggleHistory,
+        variant: "secondary",
+        tooltip: showHistoryPanel ? "Close history" : "Message history"
+      });
+    } else if (currentTheme === "minimal") {
+      baseButtons.push({
+        id: "history",
+        label: "",
+        icon: "\u27E8",
+        onClick: toggleHistory,
+        variant: "secondary",
+        tooltip: "History"
+      });
+    } else {
+      baseButtons.push({
+        id: "history",
+        label: "",
+        icon: "\u{1F4DA}",
+        onClick: toggleHistory,
+        variant: "secondary",
+        tooltip: showHistoryPanel ? "Close conversation history" : "View conversation history"
+      });
+    }
+    return baseButtons;
+  };
+  const headerButtons = getHeaderButtons();
   const settings = settingsManager.getSettings();
   const themeProvider = ThemeProvider.getInstance();
   const themeComponents = themeProvider.getComponents(currentTheme);
   if (showHistoryPanel) {
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
-      ConversationHistoryPanel,
+    return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+      themeComponents.HistoryPanel,
       {
+        conversations: conversations.filter(
+          (conv) => conv.name.toLowerCase().includes(historySearchQuery.toLowerCase())
+        ),
+        searchQuery: historySearchQuery,
+        isLoading: isLoadingConversations,
+        error: conversationError,
+        currentConversationId,
         onSelectConversation: handleConversationSelect,
         onNewConversation: startNewChat,
         onClose: () => setShowHistoryPanel(false),
-        currentConversationId
+        onDeleteConversation: handleDeleteConversation,
+        onClearAllConversations: handleClearAllConversations,
+        onSearchChange: setHistorySearchQuery,
+        onRetry: loadConversations,
+        maxHistoryToShow: settingsManager.getSettings().maxConversationHistory,
+        formatDate
       }
     ) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
       themeComponents.Header,
       {
         name: "AI Assistant",
@@ -28888,12 +30207,12 @@ var ChatInterface = () => {
         contextInfo: settings.enableContextTracking ? contextInfo : void 0
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-messages" : `ai-chat-messages-${currentTheme}`, children: [
-      messages.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "flex flex-col items-center justify-center h-full text-center text-muted-foreground", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "w-16 h-16 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] flex items-center justify-center mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "text-2xl text-white", children: "\u{1F4AC}" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { className: "text-sm", children: "No messages yet" }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { className: "text-xs mt-1", children: "Start the conversation!" })
-      ] }) : messages.map((message) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-messages" : `ai-chat-messages-${currentTheme}`, children: [
+      messages.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "flex flex-col items-center justify-center h-full text-center text-muted-foreground", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "w-16 h-16 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] flex items-center justify-center mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "text-2xl text-white", children: "\u{1F4AC}" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("p", { className: "text-sm", children: "No messages yet" }),
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("p", { className: "text-xs mt-1", children: "Start the conversation!" })
+      ] }) : messages.map((message) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
         themeComponents.Bubble,
         {
           message: message.isThinking ? "Thinking..." : message.content,
@@ -28902,9 +30221,9 @@ var ChatInterface = () => {
         },
         message.id
       )),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { ref: messagesEndRef })
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { ref: messagesEndRef })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
       themeComponents.Input,
       {
         onSend: handleSendMessage,
@@ -28916,7 +30235,7 @@ var ChatInterface = () => {
 };
 
 // src/ui/react-chat-view.tsx
-var import_jsx_runtime16 = __toESM(require_jsx_runtime());
+var import_jsx_runtime19 = __toESM(require_jsx_runtime());
 var VIEW_TYPE_AI_CHAT = "ai-chat-view";
 var ReactChatView = class extends import_obsidian4.ItemView {
   constructor(leaf, aiService, settingsManager, stylesManager) {
@@ -28939,13 +30258,13 @@ var ReactChatView = class extends import_obsidian4.ItemView {
     console.log("Opening React chat view...");
     this.root = (0, import_client.createRoot)(this.contentEl);
     this.root.render(
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_react8.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_react7.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
         ContextProviders,
         {
           app: this.app,
           aiService: this.aiService,
           settingsManager: this.settingsManager,
-          children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ChatInterface, {})
+          children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ChatInterface, {})
         }
       ) })
     );
@@ -28964,13 +30283,13 @@ var ReactChatView = class extends import_obsidian4.ItemView {
       const settings = this.settingsManager.getSettings();
       const themeKey = `chat-${settings.chatTheme}-${Date.now()}`;
       this.root.render(
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_react8.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_react7.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
           ContextProviders,
           {
             app: this.app,
             aiService: this.aiService,
             settingsManager: this.settingsManager,
-            children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ChatInterface, {}, themeKey)
+            children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ChatInterface, {}, themeKey)
           }
         ) })
       );

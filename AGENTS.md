@@ -7,7 +7,9 @@
 This is an **Obsidian AI Assistant plugin** that integrates AI capabilities directly into Obsidian note-taking workflows. For detailed architecture information, see [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ### **Core User Workflows**
-- **Chat Interface**: React-powered sidebar with conversation persistence
+- **Chat Interface**: React-powered sidebar with conversation persistence and theme-specific history panels
+- **Conversation History**: Full-screen navigation with theme-aware designs (iOS Messages, Discord, etc.)
+- **Auto-Save System**: Intelligent conversation persistence with user-configurable settings
 - **File Triggers**: Auto-response to `ai question??` patterns in notes
 - **Hotkey Processing**: AI processes notes using custom `prompt.md` files
 - **Quick Questions**: Modal interface for fast queries
@@ -69,20 +71,43 @@ const conversation = await conversationManager.loadConversation(id);
 const metadata = await conversationManager.getConversationMetadata();
 ```
 
-### **4. Using Conversation History Panel**
-Import and integrate the conversation history component:
+### **4. Creating Theme-Specific History Panels**
+Each theme now includes its own HistoryPanel component:
 ```typescript
-import { ConversationHistoryPanel } from './ConversationHistoryPanel';
+// Add to theme components interface in types.ts
+export interface ThemeComponents {
+  Bubble: React.FC<ChatBubbleProps>;
+  Header: React.FC<ChatHeaderProps>;
+  Input: React.FC<ChatInputProps>;
+  HistoryPanel: React.FC<ConversationHistoryProps>; // New!
+}
 
-// In your component:
-{showHistoryPanel && (
-  <ConversationHistoryPanel
-    onSelectConversation={handleConversationSelect}
-    onNewConversation={startNewChat}
-    onClose={() => setShowHistoryPanel(false)}
-    currentConversationId={currentConversationId}
-  />
-)}
+// Example: iMessage theme history panel
+export const iMessageHistoryPanel: React.FC<ConversationHistoryProps> = ({
+  conversations, onSelectConversation, onClose, // ... other props
+}) => {
+  return <div>iOS Messages-style interface</div>;
+};
+```
+
+### **5. Using Theme-Aware Conversation History**
+The ChatInterface automatically uses the correct theme's HistoryPanel:
+```typescript
+// Show history view using theme-specific component
+if (showHistoryPanel) {
+  return (
+    <div className={currentTheme === 'default' ? 'ai-chat-container' : `ai-chat-container-${currentTheme}`}>
+      <themeComponents.HistoryPanel
+        conversations={filteredConversations}
+        currentConversationId={currentConversationId}
+        onSelectConversation={handleConversationSelect}
+        onNewConversation={startNewChat}
+        onClose={() => setShowHistoryPanel(false)}
+        // ... all other props
+      />
+    </div>
+  );
+}
 ```
 
 ### **5. Adding New Commands**

@@ -29,23 +29,27 @@ obsidian-ai-assistant/
 │   │   │   ├── index.ts             # Central theme exports
 │   │   │   ├── default/             # Default Obsidian theme
 │   │   │   │   ├── Bubble.tsx       # Message bubble component
-│   │   │   │   ├── Header.tsx       # Header component
+│   │   │   │   ├── Header.tsx       # Header with icon buttons
 │   │   │   │   ├── Input.tsx        # Input component
+│   │   │   │   ├── HistoryPanel.tsx # Professional history panel
 │   │   │   │   └── index.ts         # Theme configuration
 │   │   │   ├── imessage/            # iOS Messages theme
 │   │   │   │   ├── Bubble.tsx       # iOS-style bubbles
 │   │   │   │   ├── Header.tsx       # iOS-style header
 │   │   │   │   ├── Input.tsx        # iOS-style input
+│   │   │   │   ├── HistoryPanel.tsx # iOS Messages history panel
 │   │   │   │   └── index.ts         # Theme configuration
 │   │   │   ├── discord/             # Discord-style theme
 │   │   │   │   ├── Bubble.tsx       # Discord bubbles with avatars
 │   │   │   │   ├── Header.tsx       # Discord-style header
 │   │   │   │   ├── Input.tsx        # Discord-style input
+│   │   │   │   ├── HistoryPanel.tsx # Discord-style history panel
 │   │   │   │   └── index.ts         # Theme configuration
 │   │   │   └── minimal/             # Minimal clean theme
 │   │   │       ├── Bubble.tsx       # Minimal bubbles
 │   │   │       ├── Header.tsx       # Minimal header
 │   │   │       ├── Input.tsx        # Minimal input
+│   │   │       ├── HistoryPanel.tsx # Minimal history panel
 │   │   │       └── index.ts         # Theme configuration
 │   │   ├── themed-components/       # Legacy theme components (deprecated)
 │   │   └── utils/                   # React utilities
@@ -215,12 +219,22 @@ src/react/themes/
 ```
 
 ### **Advanced Theme System Features**
-- **Four Chat Themes**: Default (Obsidian), Message (iOS), Minimal (Clean), Discord (Chat App)
+- **Four Complete Themes**: Default (Obsidian), iMessage (iOS), Minimal (Clean), Discord (Chat App)
 - **Component Replacement**: Entire UI sections can be swapped based on theme selection
+- **Theme-Specific History**: Each theme includes its own HistoryPanel component
+- **Full-Screen Navigation**: History panels completely replace chat interface
 - **Avatar Generation**: Random colorful avatars via [`AvatarGenerator.ts`](src/react/utils/AvatarGenerator.ts)
 - **Utility Classes**: 120+ Tailwind-like CSS utilities with `!important` overrides
 - **Instant Switching**: Real-time theme changes via settings
 - **CSS Override System**: Forceful styling that works in Obsidian's environment
+
+### **Conversation History Architecture**
+- **Theme-Aware Design**: Each theme has its own unique history panel styling and interactions
+- **Full-Screen Experience**: History completely replaces chat view for focused browsing
+- **Auto-Save Integration**: Conversations automatically save when switching between chats
+- **Search & Filter**: Real-time conversation filtering across all themes
+- **iOS Messages Replica**: Perfect iOS Messages interface with native interactions
+- **Professional Polish**: No modal artifacts, true native Obsidian integration
 
 ### **Beautiful Styling System**
 - **Modular CSS**: Separate style modules with theme-specific overrides
@@ -375,12 +389,17 @@ console.log("=== REACT CHAT: Starting message send ===");
 - ✅ SOLID architecture principles
 - ✅ Professional build system
 
-### **Recent Enhancements (v2.1)**
+### **Recent Enhancements (v2.2)**
+- 🆕 **Theme-Specific History Panels**: Each theme now includes its own HistoryPanel component with unique designs
+- 🆕 **iOS Messages Interface**: Perfect iOS Messages replica with swipe-to-delete and native interactions
+- 🆕 **Full-Screen Navigation**: True screen replacement for conversation history (no modal artifacts)
+- 🆕 **Auto-Save Integration**: Smart conversation saving when switching between chats
+- 🆕 **Enhanced Default Header**: Icon buttons aligned properly on the right side of header
+- 🆕 **Search & Filter**: Real-time conversation search across all themes
 - 🆕 **Conversation Management**: Full conversation persistence with [`ConversationManager`](src/core/conversation-manager.ts)
 - 🆕 **Context Tracking**: Real-time word count with configurable limits and visual progress bars
 - 🆕 **Extensible UI**: Theme-agnostic button system using [`HeaderButton[]`](src/react/themes/types.ts:11) interface
 - 🆕 **Smart Context Trimming**: Automatic message trimming to fit within configured context windows
-- 🆕 **Enhanced Settings**: Added 4 new configuration options for conversation and context management
 
 ### **Ready for Production**
 The plugin is now a professional-grade TypeScript + React application with enterprise-level architecture, advanced conversation management, real-time context tracking, and extensible theming system that provides a superior user experience.

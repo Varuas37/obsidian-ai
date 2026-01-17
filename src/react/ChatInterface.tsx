@@ -20,6 +20,10 @@ export const ChatInterface: React.FC = () => {
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [contextInfo, setContextInfo] = useState<ContextInfo>({ currentWords: 0, maxWords: 8000, percentage: 0 });
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const [conversationError, setConversationError] = useState<string | null>(null);
+  const [historySearchQuery, setHistorySearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const aiService = useAIService();
@@ -214,9 +218,34 @@ export const ChatInterface: React.FC = () => {
   /**
    * Show/hide conversation history panel
    */
-  const toggleHistory = () => {
+  const toggleHistory = async () => {
+    if (!showHistoryPanel) {
+      // Load conversations when opening history
+      await loadConversations();
+    }
     setShowHistoryPanel(!showHistoryPanel);
     console.log(`=== CHAT INTERFACE: History panel ${!showHistoryPanel ? 'opened' : 'closed'} ===`);
+  };
+
+  /**
+   * Load conversations for history panel
+   */
+  const loadConversations = async () => {
+    try {
+      setIsLoadingConversations(true);
+      setConversationError(null);
+      console.log("=== CHAT INTERFACE: Loading conversations for history ===");
+      
+      const metadata = await conversationManager.getConversationMetadata();
+      setConversations(metadata);
+      
+      console.log(`=== CHAT INTERFACE: Loaded ${metadata.length} conversations for history ===`);
+    } catch (err) {
+      console.error("=== CHAT INTERFACE: Error loading conversations:", err);
+      setConversationError("Failed to load conversations");
+    } finally {
+      setIsLoadingConversations(false);
+    }
   };
 
   /**
@@ -232,6 +261,66 @@ export const ChatInterface: React.FC = () => {
     // Load the selected conversation
     await loadConversation(conversationId);
     setShowHistoryPanel(false); // Close history panel after selection
+  };
+
+  /**
+   * Handle deleting a conversation
+   */
+  const handleDeleteConversation = async (conversationId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent conversation selection
+    
+    try {
+      console.log(`=== CHAT INTERFACE: Deleting conversation ${conversationId} ===`);
+      await conversationManager.deleteConversation(conversationId);
+      await loadConversations(); // Refresh list
+      
+      // If we deleted the current conversation, start a new one
+      if (conversationId === currentConversationId) {
+        await startNewChat();
+      }
+    } catch (err) {
+      console.error("=== CHAT INTERFACE: Error deleting conversation:", err);
+      setConversationError("Failed to delete conversation");
+    }
+  };
+
+  /**
+   * Handle clearing all conversations
+   */
+  const handleClearAllConversations = async () => {
+    if (!confirm("Are you sure you want to delete all conversations? This action cannot be undone.")) {
+      return;
+    }
+    
+    try {
+      console.log("=== CHAT INTERFACE: Clearing all conversations ===");
+      await conversationManager.clearAllConversations();
+      setConversations([]);
+      await startNewChat(); // Start fresh
+    } catch (err) {
+      console.error("=== CHAT INTERFACE: Error clearing conversations:", err);
+      setConversationError("Failed to clear conversations");
+    }
+  };
+
+  /**
+   * Format date for conversation display
+   */
+  const formatDate = (timestamp: number): string => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
   };
 
   /**
@@ -344,25 +433,92 @@ export const ChatInterface: React.FC = () => {
     }
   };
 
-  // Create header buttons using the new extensible system
-  const headerButtons: HeaderButton[] = [
-    {
-      id: 'new-chat',
-      label: 'New Chat',
-      icon: '➕',
-      onClick: startNewChat,
-      variant: 'primary',
-      tooltip: 'Start a new conversation'
-    },
-    {
-      id: 'history',
-      label: 'History',
-      icon: '📚',
-      onClick: toggleHistory,
-      variant: 'secondary',
-      tooltip: showHistoryPanel ? 'Close conversation history' : 'View conversation history'
+  // Create header buttons with theme-appropriate icons
+  const getHeaderButtons = (): HeaderButton[] => {
+    const baseButtons: HeaderButton[] = [];
+    
+    // New Chat button with theme-specific styling
+    if (currentTheme === 'imessage') {
+      baseButtons.push({
+        id: 'new-chat',
+        label: '',
+        icon: '✏️',
+        onClick: startNewChat,
+        variant: 'primary',
+        tooltip: 'New message'
+      });
+    } else if (currentTheme === 'discord') {
+      baseButtons.push({
+        id: 'new-chat',
+        label: '',
+        icon: '💬',
+        onClick: startNewChat,
+        variant: 'primary',
+        tooltip: 'New chat'
+      });
+    } else if (currentTheme === 'minimal') {
+      baseButtons.push({
+        id: 'new-chat',
+        label: '',
+        icon: '+',
+        onClick: startNewChat,
+        variant: 'primary',
+        tooltip: 'New'
+      });
+    } else {
+      baseButtons.push({
+        id: 'new-chat',
+        label: '',
+        icon: '➕',
+        onClick: startNewChat,
+        variant: 'primary',
+        tooltip: 'Start a new conversation'
+      });
     }
-  ];
+    
+    // History button with theme-specific styling
+    if (currentTheme === 'imessage') {
+      baseButtons.push({
+        id: 'history',
+        label: '',
+        icon: '🕐',
+        onClick: toggleHistory,
+        variant: 'secondary',
+        tooltip: showHistoryPanel ? 'Close' : 'History'
+      });
+    } else if (currentTheme === 'discord') {
+      baseButtons.push({
+        id: 'history',
+        label: '',
+        icon: '📜',
+        onClick: toggleHistory,
+        variant: 'secondary',
+        tooltip: showHistoryPanel ? 'Close history' : 'Message history'
+      });
+    } else if (currentTheme === 'minimal') {
+      baseButtons.push({
+        id: 'history',
+        label: '',
+        icon: '⟨',
+        onClick: toggleHistory,
+        variant: 'secondary',
+        tooltip: 'History'
+      });
+    } else {
+      baseButtons.push({
+        id: 'history',
+        label: '',
+        icon: '📚',
+        onClick: toggleHistory,
+        variant: 'secondary',
+        tooltip: showHistoryPanel ? 'Close conversation history' : 'View conversation history'
+      });
+    }
+    
+    return baseButtons;
+  };
+  
+  const headerButtons = getHeaderButtons();
 
   const settings = settingsManager.getSettings();
   const themeProvider = ThemeProvider.getInstance();
@@ -372,11 +528,23 @@ export const ChatInterface: React.FC = () => {
   if (showHistoryPanel) {
     return (
       <div className={currentTheme === 'default' ? 'ai-chat-container' : `ai-chat-container-${currentTheme}`}>
-        <ConversationHistoryPanel
+        <themeComponents.HistoryPanel
+          conversations={conversations.filter(conv =>
+            conv.name.toLowerCase().includes(historySearchQuery.toLowerCase())
+          )}
+          searchQuery={historySearchQuery}
+          isLoading={isLoadingConversations}
+          error={conversationError}
+          currentConversationId={currentConversationId}
           onSelectConversation={handleConversationSelect}
           onNewConversation={startNewChat}
           onClose={() => setShowHistoryPanel(false)}
-          currentConversationId={currentConversationId}
+          onDeleteConversation={handleDeleteConversation}
+          onClearAllConversations={handleClearAllConversations}
+          onSearchChange={setHistorySearchQuery}
+          onRetry={loadConversations}
+          maxHistoryToShow={settingsManager.getSettings().maxConversationHistory}
+          formatDate={formatDate}
         />
       </div>
     );

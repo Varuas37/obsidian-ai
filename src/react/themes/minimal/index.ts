@@ -2,6 +2,7 @@ import { ThemeConfig } from '../types';
 import { MinimalBubble } from './Bubble';
 import { MinimalHeader } from './Header';
 import { MinimalInput } from './Input';
+import { MinimalHistoryPanel } from './HistoryPanel';
 
 export const minimalTheme: ThemeConfig = {
   name: 'minimal',
@@ -10,6 +11,7 @@ export const minimalTheme: ThemeConfig = {
   components: {
     Bubble: MinimalBubble,
     Header: MinimalHeader,
-    Input: MinimalInput
+    Input: MinimalInput,
+    HistoryPanel: MinimalHistoryPanel
   }
 };

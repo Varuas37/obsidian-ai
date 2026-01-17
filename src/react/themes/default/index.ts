@@ -2,6 +2,7 @@ import { ThemeConfig } from '../types';
 import { DefaultBubble } from './Bubble';
 import { DefaultHeader } from './Header';
 import { DefaultInput } from './Input';
+import { DefaultHistoryPanel } from './HistoryPanel';
 
 export const defaultTheme: ThemeConfig = {
   name: 'default',
@@ -10,6 +11,7 @@ export const defaultTheme: ThemeConfig = {
   components: {
     Bubble: DefaultBubble,
     Header: DefaultHeader,
-    Input: DefaultInput
+    Input: DefaultInput,
+    HistoryPanel: DefaultHistoryPanel
   }
 };

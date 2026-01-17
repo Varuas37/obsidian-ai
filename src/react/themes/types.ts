@@ -39,11 +39,29 @@ export interface ChatInputProps {
   disabled?: boolean;
 }
 
+export interface ConversationHistoryProps {
+  conversations: any[];
+  searchQuery: string;
+  isLoading: boolean;
+  error: string | null;
+  currentConversationId: string | null;
+  onSelectConversation: (conversationId: string) => void;
+  onNewConversation: () => void;
+  onClose: () => void;
+  onDeleteConversation: (conversationId: string, event: React.MouseEvent) => void;
+  onClearAllConversations: () => void;
+  onSearchChange: (query: string) => void;
+  onRetry: () => void;
+  maxHistoryToShow: number;
+  formatDate: (timestamp: number) => string;
+}
+
 // Theme component interfaces
 export interface ThemeComponents {
-  Bubble: (props: ChatBubbleProps) => ReactElement;
-  Header: (props: ChatHeaderProps) => ReactElement;
-  Input: (props: ChatInputProps) => ReactElement;
+  Bubble: React.FC<ChatBubbleProps>;
+  Header: React.FC<ChatHeaderProps>;
+  Input: React.FC<ChatInputProps>;
+  HistoryPanel: React.FC<ConversationHistoryProps>;
 }
 
 // Theme configuration
