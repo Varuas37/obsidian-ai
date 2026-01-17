@@ -25733,24 +25733,76 @@ var OllamaProvider = class extends BaseAIProvider {
   }
   createRequestExecutor() {
     return new TimedRequestExecutor(this.providerName, async (prompt) => {
-      const baseUrl = this.settings.ollamaUrl || "http://localhost:11434";
+      var _a, _b;
+      let baseUrl = (_a = this.settings.ollamaUrl) == null ? void 0 : _a.trim();
+      if (!baseUrl) {
+        baseUrl = "http://localhost:11434";
+      }
+      baseUrl = baseUrl.replace(/\/+$/, "");
+      try {
+        new URL(baseUrl);
+      } catch (urlError) {
+        throw new Error(`Invalid Ollama URL format: "${baseUrl}". Please use format like "http://localhost:11434"`);
+      }
+      const fullUrl = `${baseUrl}/api/generate`;
+      const model = ((_b = this.settings.ollamaModel) == null ? void 0 : _b.trim()) || "gemma2:12b";
       const body = {
-        model: this.settings.ollamaModel || "llama3.1",
+        model,
         prompt,
         stream: false
       };
-      console.log("Ollama: Request body prepared, size:", JSON.stringify(body).length, "bytes");
+      console.log("=== OLLAMA API REQUEST DEBUG ===");
+      console.log("Base URL:", baseUrl);
+      console.log("Full URL:", fullUrl);
+      console.log("Model:", model);
+      console.log("Request body prepared, size:", JSON.stringify(body).length, "bytes");
       const response = await (0, import_obsidian.requestUrl)({
-        url: `${baseUrl}/api/generate`,
+        url: fullUrl,
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        throw: false
+        // Don't throw on non-2xx, let us inspect the response
       });
-      console.log("Ollama: Response received, status:", response.status);
+      console.log("=== OLLAMA API RESPONSE DEBUG ===");
+      console.log("Status:", response.status);
+      console.log("Response text:", response.text);
+      console.log("Response json:", response.json);
       if (response.status < 200 || response.status >= 300) {
-        throw response;
+        console.error("=== OLLAMA API ERROR ===");
+        console.error("Status:", response.status);
+        console.error("Response text:", response.text);
+        console.error("Response json:", response.json);
+        let errorMessage = response.text || JSON.stringify(response.json) || "Unknown error";
+        if (response.status === 404) {
+          errorMessage = `Ollama endpoint not found.
+
+Current URL: ${fullUrl}
+Model: ${model}
+
+Common issues:
+\u2022 Ollama service not running - run: ollama serve
+\u2022 Wrong URL - should be http://localhost:11434
+\u2022 Model not installed - run: ollama pull ${model}
+
+Original error: ${errorMessage}`;
+        } else if (response.status === 500) {
+          errorMessage = `Ollama server error.
+
+This usually means:
+\u2022 Model "${model}" is not installed - run: ollama pull ${model}
+\u2022 Model name is incorrect - check with: ollama list
+\u2022 Ollama service is having issues
+
+Original error: ${errorMessage}`;
+        }
+        const error = new Error(`Ollama API ${response.status}: ${errorMessage}`);
+        error.status = response.status;
+        error.json = response.json;
+        error.text = response.text;
+        throw error;
       }
       return response.json;
     });
@@ -28249,7 +28301,7 @@ var AIObsidianSettingTab = class extends import_obsidian4.PluginSettingTab {
       helpEl.innerHTML = `
         <div style="margin-bottom: 12px; font-weight: 500; color: var(--text-normal);">Popular models:</div>
         <div style="margin-left: 12px; line-height: 1.4;">
-          <div>\u2022 <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">gemma2:12b</code> - Gemma 3 12B</div>
+          <div>\u2022 <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">gemma3:12b</code> - Gemma 3 12B</div>
           <div>\u2022 <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">llama3.1</code> - Llama 3.1 8B</div>
           <div>\u2022 <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">llama3.1:70b</code> - Llama 3.1 70B</div>
           <div>\u2022 <code style="background: var(--code-background); padding: 2px 4px; border-radius: 3px; font-size: 0.85em;">codellama</code> - Code Llama</div>

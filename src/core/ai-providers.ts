@@ -989,28 +989,91 @@ export class OllamaProvider extends BaseAIProvider {
 
   protected createRequestExecutor(): RequestExecutor {
     return new TimedRequestExecutor(this.providerName, async (prompt: string | PromptStructure) => {
-      const baseUrl = this.settings.ollamaUrl || "http://localhost:11434";
+      // Validate and construct base URL
+      let baseUrl = this.settings.ollamaUrl?.trim();
+      if (!baseUrl) {
+        baseUrl = "http://localhost:11434";
+      }
+      
+      // Remove trailing slashes for clean URL construction
+      baseUrl = baseUrl.replace(/\/+$/, '');
+      
+      // Validate URL format
+      try {
+        new URL(baseUrl);
+      } catch (urlError) {
+        throw new Error(`Invalid Ollama URL format: "${baseUrl}". Please use format like "http://localhost:11434"`);
+      }
+      
+      // Construct full endpoint URL
+      const fullUrl = `${baseUrl}/api/generate`;
+      
+      // Prepare request body
+      const model = this.settings.ollamaModel?.trim() || "gemma2:12b";
       const body = {
-        model: this.settings.ollamaModel || "llama3.1",
+        model: model,
         prompt: prompt as string,
         stream: false
       };
       
-      console.log("Ollama: Request body prepared, size:", JSON.stringify(body).length, "bytes");
+      console.log("=== OLLAMA API REQUEST DEBUG ===");
+      console.log("Base URL:", baseUrl);
+      console.log("Full URL:", fullUrl);
+      console.log("Model:", model);
+      console.log("Request body prepared, size:", JSON.stringify(body).length, "bytes");
       
       const response = await requestUrl({
-        url: `${baseUrl}/api/generate`,
+        url: fullUrl,
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        throw: false // Don't throw on non-2xx, let us inspect the response
       });
       
-      console.log("Ollama: Response received, status:", response.status);
+      console.log("=== OLLAMA API RESPONSE DEBUG ===");
+      console.log("Status:", response.status);
+      console.log("Response text:", response.text);
+      console.log("Response json:", response.json);
       
       if (response.status < 200 || response.status >= 300) {
-        throw response; // Let error handler deal with it
+        console.error("=== OLLAMA API ERROR ===");
+        console.error("Status:", response.status);
+        console.error("Response text:", response.text);
+        console.error("Response json:", response.json);
+        
+        let errorMessage = response.text || JSON.stringify(response.json) || "Unknown error";
+        
+        // Provide helpful guidance for common Ollama issues
+        if (response.status === 404) {
+          errorMessage = `Ollama endpoint not found.
+
+Current URL: ${fullUrl}
+Model: ${model}
+
+Common issues:
+• Ollama service not running - run: ollama serve
+• Wrong URL - should be http://localhost:11434
+• Model not installed - run: ollama pull ${model}
+
+Original error: ${errorMessage}`;
+        } else if (response.status === 500) {
+          errorMessage = `Ollama server error.
+
+This usually means:
+• Model "${model}" is not installed - run: ollama pull ${model}
+• Model name is incorrect - check with: ollama list
+• Ollama service is having issues
+
+Original error: ${errorMessage}`;
+        }
+        
+        const error: any = new Error(`Ollama API ${response.status}: ${errorMessage}`);
+        error.status = response.status;
+        error.json = response.json;
+        error.text = response.text;
+        throw error;
       }
       
       return response.json;
