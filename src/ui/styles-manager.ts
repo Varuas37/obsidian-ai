@@ -286,13 +286,14 @@ export class StylesManager {
       }
       
       .ai-chat-input-container {
-        padding: 16px 20px 20px;
+        padding: 24px 20px;
         background: var(--background-primary);
         border-top: 1px solid var(--background-modifier-border);
         display: flex;
         gap: 12px;
-        align-items: flex-end;
+        align-items: center;
         position: relative;
+        justify-content: center;
       }
       
       .ai-chat-input-container::before {
@@ -308,19 +309,20 @@ export class StylesManager {
       
       .ai-chat-input {
         flex: 1;
-        min-height: 44px;
+        min-height: 52px;
         max-height: 120px;
-        padding: 12px 16px;
-        border: 2px solid var(--background-modifier-border);
-        border-radius: 22px;
-        background: var(--background-secondary);
+        padding: 16px 24px;
+        border: 2px solid var(--interactive-accent);
+        border-radius: 26px;
+        background: var(--background-primary);
         color: var(--text-normal);
         font-family: var(--font-interface);
-        font-size: 14px;
+        font-size: 15px;
         resize: none;
         outline: none;
         transition: all 0.3s ease;
-        line-height: 1.4;
+        line-height: 1.5;
+        box-shadow: 0 2px 12px rgba(var(--interactive-accent-rgb), 0.15);
       }
       
       .ai-chat-input:focus {
@@ -342,18 +344,21 @@ export class StylesManager {
       }
       
       .ai-chat-send-btn {
-        padding: 12px 20px;
-        background: linear-gradient(135deg, var(--interactive-accent), var(--interactive-accent-hover));
+        padding: 12px 16px;
+        background: var(--interactive-accent);
         color: var(--text-on-accent);
         border: none;
-        border-radius: 22px;
+        border-radius: 20px;
         cursor: pointer;
-        font-size: 14px;
-        font-weight: 600;
+        font-size: 16px;
+        font-weight: 500;
         transition: all 0.3s ease;
-        min-width: 80px;
-        position: relative;
-        overflow: hidden;
+        min-width: 52px;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
       }
       
       .ai-chat-send-btn::before {
