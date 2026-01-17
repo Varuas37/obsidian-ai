@@ -64,6 +64,10 @@ export default class AIObsidianPlugin extends Plugin {
     this.stylesManager = new StylesManager();
     this.stylesManager.initializeAllStyles();
     
+    // Apply current settings-based styles including theme
+    const settings = this.settingsManager.getSettings();
+    this.stylesManager.applySettingsBasedStyles(settings);
+    
     console.log("✅ Core services initialized");
   }
 
@@ -96,7 +100,7 @@ export default class AIObsidianPlugin extends Plugin {
     // Register the React chat view
     this.registerView(
       VIEW_TYPE_AI_CHAT,
-      (leaf) => new ReactChatView(leaf, this.aiService, this.settingsManager)
+      (leaf) => new ReactChatView(leaf, this.aiService, this.settingsManager, this.stylesManager)
     );
 
     // Add settings tab with full functionality

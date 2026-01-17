@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { useAIService, useSettings } from './context';
+import { ChatBubble } from './themed-components/ChatBubble';
+import { ChatHeader } from './themed-components/ChatHeader';
+import { ChatInput } from './themed-components/ChatInput';
 
 interface Message {
   id: string;
@@ -11,10 +14,9 @@ interface Message {
 
 export const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState<string>('default');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const aiService = useAIService();
   const settingsManager = useSettings();
@@ -23,6 +25,35 @@ export const ChatInterface: React.FC = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Watch for theme changes and update state with detailed logging
+  useEffect(() => {
+    const settings = settingsManager.getSettings();
+    const newTheme = settings.chatTheme || 'default';
+    console.log("=== CHAT INTERFACE: Theme change detected:", newTheme);
+    console.log("=== CHAT INTERFACE: Previous theme:", currentTheme);
+    console.log("=== CHAT INTERFACE: Will render components with theme:", newTheme);
+    
+    if (newTheme !== currentTheme) {
+      setCurrentTheme(newTheme);
+      console.log("=== CHAT INTERFACE: Theme state updated to:", newTheme);
+    }
+  }, [settingsManager, currentTheme]);
+
+  // Also check theme on component mount
+  useEffect(() => {
+    const settings = settingsManager.getSettings();
+    const initialTheme = settings.chatTheme || 'default';
+    console.log("=== CHAT INTERFACE: Initial theme:", initialTheme);
+    console.log("=== CHAT INTERFACE: Component mounted with theme:", initialTheme);
+    setCurrentTheme(initialTheme);
+  }, []);
+
+  // Add debug effect to track currentTheme changes
+  useEffect(() => {
+    console.log("=== CHAT INTERFACE: currentTheme state changed to:", currentTheme);
+    console.log("=== CHAT INTERFACE: Will use container class:", currentTheme === 'default' ? 'ai-chat-container' : `ai-chat-container-${currentTheme}`);
+  }, [currentTheme]);
 
   // Add welcome message on component mount
   useEffect(() => {
@@ -48,15 +79,13 @@ export const ChatInterface: React.FC = () => {
     return names[provider] || provider;
   };
 
-  const handleSendMessage = async () => {
-    const message = inputValue.trim();
+  const handleSendMessage = async (message: string) => {
     if (!message || isProcessing) return;
 
     console.log("=== REACT CHAT: Starting message send ===");
     console.log("Chat message:", message);
 
     setIsProcessing(true);
-    setInputValue('');
 
     // Add user message
     const userMessage: Message = {
@@ -130,29 +159,6 @@ export const ChatInterface: React.FC = () => {
     }
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputValue(e.target.value);
-    
-    // Auto-resize textarea
-    const textarea = e.target;
-    textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-  };
-
-  const processMessageContent = (content: string): string => {
-    return content
-      .replace(/\n/g, '<br>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code>$1</code>');
-  };
 
   const clearChat = () => {
     const settings = settingsManager.getSettings();
@@ -166,70 +172,46 @@ export const ChatInterface: React.FC = () => {
     }]);
   };
 
+  const settings = settingsManager.getSettings();
+
   return (
-    <div className="ai-chat-container">
-      <div className="ai-chat-header">
-        <h3 className="ai-chat-title">AI Assistant</h3>
-        <div className="ai-chat-provider-label">
-          Using: {getProviderDisplayName(settingsManager.getSettings().aiProvider)}
-        </div>
-        <button 
-          className="ai-chat-clear-btn"
-          onClick={clearChat}
-          title="Clear chat history"
-        >
-          Clear
-        </button>
-      </div>
+    <div className={currentTheme === 'default' ? 'ai-chat-container' : `ai-chat-container-${currentTheme}`}>
+      <ChatHeader
+        name="AI Assistant"
+        status={`Using: ${getProviderDisplayName(settings.aiProvider)}`}
+        onClear={clearChat}
+        theme={currentTheme as any}
+      />
       
-      <div className="ai-chat-messages">
-        {messages.map((message) => (
-          <div 
-            key={message.id} 
-            className={`ai-chat-message ai-chat-message-${message.type}`}
-          >
-            <div className="ai-chat-message-label">
-              {message.type === 'user' ? 'You' : 'AI Assistant'}
+      <div className={currentTheme === 'default' ? 'ai-chat-messages' : `ai-chat-messages-${currentTheme}`}>
+        {messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] flex items-center justify-center mb-4">
+              <span className="text-2xl text-white">💬</span>
             </div>
-            <div
-              className={`ai-chat-message-content ${message.isThinking ? 'ai-chat-thinking' : ''}`}
-              dangerouslySetInnerHTML={{
-                __html: message.isThinking
-                  ? '<div class="ai-chat-thinking-dots"><span></span><span></span><span></span></div>Thinking...'
-                  : processMessageContent(message.content)
-              }}
-            />
-            <div className="ai-chat-timestamp">
-              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </div>
+            <p className="text-sm">No messages yet</p>
+            <p className="text-xs mt-1">Start the conversation!</p>
           </div>
-        ))}
+        ) : (
+          messages.map((message) => (
+            <ChatBubble
+              key={message.id}
+              message={message.isThinking ? 'Thinking...' : message.content}
+              isUser={message.type === 'user'}
+              timestamp={message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              theme={currentTheme as any}
+            />
+          ))
+        )}
         <div ref={messagesEndRef} />
       </div>
       
-      <div className="ai-chat-input-container">
-        <textarea
-          ref={textareaRef}
-          className="ai-chat-input"
-          value={inputValue}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask me anything..."
-          disabled={isProcessing}
-        />
-        <button
-          className="ai-chat-send-btn"
-          onClick={handleSendMessage}
-          disabled={isProcessing || !inputValue.trim()}
-          title={isProcessing ? "Sending message..." : "Send message (Enter)"}
-        >
-          {isProcessing ? (
-            <div className="ai-chat-spinner"></div>
-          ) : (
-            '✈️'
-          )}
-        </button>
-      </div>
+      <ChatInput
+        onSend={handleSendMessage}
+        placeholder="Ask me anything..."
+        disabled={isProcessing}
+        theme={currentTheme as any}
+      />
     </div>
   );
 };

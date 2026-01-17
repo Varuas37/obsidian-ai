@@ -293,6 +293,37 @@ export class AIObsidianSettingTab extends PluginSettingTab {
           await this.settingsManager.updateSetting('chatPanelSide', value);
           new Notice("Chat panel side changed. Restart Obsidian or reload the plugin to apply changes.");
         }));
+
+    new Setting(containerEl)
+      .setName("Chat theme")
+      .setDesc("Choose the visual style for the chat interface")
+      .addDropdown((dropdown) => dropdown
+        .addOption("default", "Default (Obsidian)")
+        .addOption("imessage", "iMessage Style")
+        .addOption("minimal", "Minimal")
+        .addOption("discord", "Discord Style")
+        .setValue(settings.chatTheme)
+        .onChange(async (value: any) => {
+          await this.settingsManager.updateSetting('chatTheme', value);
+          
+          // Apply the new theme styles immediately
+          const plugin = this.plugin as any;
+          if (plugin.stylesManager) {
+            const newSettings = this.settingsManager.getSettings();
+            plugin.stylesManager.applySettingsBasedStyles(newSettings);
+            console.log("🎨 Applied new theme:", value);
+          }
+          
+          // Refresh the chat view to update components
+          const chatViews = this.app.workspace.getLeavesOfType('ai-chat-view');
+          chatViews.forEach((leaf: any) => {
+            if (leaf.view && leaf.view.refresh) {
+              leaf.view.refresh();
+            }
+          });
+          
+          new Notice("Chat theme changed. Changes applied immediately.");
+        }));
   }
 
   /**

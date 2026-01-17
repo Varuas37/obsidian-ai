@@ -11,6 +11,7 @@ export interface PluginSettings {
   triggerKeyword: string;
   questionSuffix: string;
   chatPanelSide: 'left' | 'right';
+  chatTheme: 'default' | 'imessage' | 'minimal' | 'discord';
   aiProvider: 'cli' | 'anthropic' | 'openai' | 'openrouter' | 'ollama';
   apiProvider: string;
   anthropicApiKey: string;
@@ -33,6 +34,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   triggerKeyword: "ai",
   questionSuffix: "??",
   chatPanelSide: "right",
+  chatTheme: "default",
   aiProvider: "cli",
   apiProvider: "anthropic",
   anthropicApiKey: "",
@@ -110,6 +112,12 @@ export class SettingsManager {
     // Validate chat panel side
     if (!['left', 'right'].includes(this.settings.chatPanelSide)) {
       this.settings.chatPanelSide = DEFAULT_SETTINGS.chatPanelSide;
+    }
+
+    // Validate chat theme
+    const validThemes: PluginSettings['chatTheme'][] = ['default', 'imessage', 'minimal', 'discord'];
+    if (!validThemes.includes(this.settings.chatTheme)) {
+      this.settings.chatTheme = DEFAULT_SETTINGS.chatTheme;
     }
 
     // Validate AI provider

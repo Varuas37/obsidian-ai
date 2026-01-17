@@ -19,7 +19,8 @@ export class ReactChatView extends ItemView {
   constructor(
     leaf: WorkspaceLeaf,
     private aiService: AIService,
-    private settingsManager: SettingsManager
+    private settingsManager: SettingsManager,
+    private stylesManager?: any
   ) {
     super(leaf);
   }
@@ -67,6 +68,10 @@ export class ReactChatView extends ItemView {
    */
   refresh(): void {
     if (this.root) {
+      // Force re-render with current theme as key
+      const settings = this.settingsManager.getSettings();
+      const themeKey = `chat-${settings.chatTheme}-${Date.now()}`;
+      
       this.root.render(
         <StrictMode>
           <ContextProviders
@@ -74,7 +79,7 @@ export class ReactChatView extends ItemView {
             aiService={this.aiService}
             settingsManager={this.settingsManager}
           >
-            <ChatInterface />
+            <ChatInterface key={themeKey} />
           </ContextProviders>
         </StrictMode>
       );

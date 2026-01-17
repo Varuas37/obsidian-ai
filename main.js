@@ -1094,7 +1094,7 @@ var require_react_development = __commonJS({
           }
           return dispatcher.useContext(Context);
         }
-        function useState2(initialState) {
+        function useState3(initialState) {
           var dispatcher = resolveDispatcher();
           return dispatcher.useState(initialState);
         }
@@ -1897,7 +1897,7 @@ var require_react_development = __commonJS({
         exports.useMemo = useMemo;
         exports.useReducer = useReducer;
         exports.useRef = useRef2;
-        exports.useState = useState2;
+        exports.useState = useState3;
         exports.useSyncExternalStore = useSyncExternalStore;
         exports.useTransition = useTransition;
         exports.version = ReactVersion;
@@ -2393,9 +2393,9 @@ var require_react_dom_development = __commonJS({
         if (typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart === "function") {
           __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(new Error());
         }
-        var React4 = require_react();
+        var React5 = require_react();
         var Scheduler = require_scheduler();
-        var ReactSharedInternals = React4.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+        var ReactSharedInternals = React5.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
         var suppressWarning = false;
         function setSuppressWarning(newSuppressWarning) {
           {
@@ -4000,7 +4000,7 @@ var require_react_dom_development = __commonJS({
           {
             if (props.value == null) {
               if (typeof props.children === "object" && props.children !== null) {
-                React4.Children.forEach(props.children, function(child) {
+                React5.Children.forEach(props.children, function(child) {
                   if (child == null) {
                     return;
                   }
@@ -23569,7 +23569,7 @@ var require_react_jsx_runtime_development = __commonJS({
     if (true) {
       (function() {
         "use strict";
-        var React4 = require_react();
+        var React5 = require_react();
         var REACT_ELEMENT_TYPE = Symbol.for("react.element");
         var REACT_PORTAL_TYPE = Symbol.for("react.portal");
         var REACT_FRAGMENT_TYPE = Symbol.for("react.fragment");
@@ -23595,7 +23595,7 @@ var require_react_jsx_runtime_development = __commonJS({
           }
           return null;
         }
-        var ReactSharedInternals = React4.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+        var ReactSharedInternals = React5.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
         function error(format) {
           {
             {
@@ -24445,11 +24445,11 @@ var require_react_jsx_runtime_development = __commonJS({
             return jsxWithValidation(type, props, key, false);
           }
         }
-        var jsx4 = jsxWithValidationDynamic;
-        var jsxs2 = jsxWithValidationStatic;
+        var jsx7 = jsxWithValidationDynamic;
+        var jsxs5 = jsxWithValidationStatic;
         exports.Fragment = REACT_FRAGMENT_TYPE;
-        exports.jsx = jsx4;
-        exports.jsxs = jsxs2;
+        exports.jsx = jsx7;
+        exports.jsxs = jsxs5;
       })();
     }
   }
@@ -24484,6 +24484,7 @@ var DEFAULT_SETTINGS = {
   triggerKeyword: "ai",
   questionSuffix: "??",
   chatPanelSide: "right",
+  chatTheme: "default",
   aiProvider: "cli",
   apiProvider: "anthropic",
   anthropicApiKey: "",
@@ -24546,6 +24547,10 @@ var SettingsManager = class {
     }
     if (!["left", "right"].includes(this.settings.chatPanelSide)) {
       this.settings.chatPanelSide = DEFAULT_SETTINGS.chatPanelSide;
+    }
+    const validThemes = ["default", "imessage", "minimal", "discord"];
+    if (!validThemes.includes(this.settings.chatTheme)) {
+      this.settings.chatTheme = DEFAULT_SETTINGS.chatTheme;
     }
     const validProviders = ["cli", "anthropic", "openai", "openrouter", "ollama"];
     if (!validProviders.includes(this.settings.aiProvider)) {
@@ -25867,6 +25872,7 @@ var StylesManager = class {
     this.addAnimations();
     this.addResponsiveStyles();
     this.addThemeStyles();
+    this.addTailwindUtilities();
   }
   /**
    * Add beautiful chat interface styles
@@ -26509,7 +26515,7 @@ var StylesManager = class {
     }
   }
   /**
-   * Apply settings-based styles
+   * Apply settings-based styles including themes
    */
   applySettingsBasedStyles(settings) {
     if (settings.chatPanelSide === "left") {
@@ -26525,6 +26531,465 @@ var StylesManager = class {
         }
       `);
     }
+    this.applyThemeStyles(settings.chatTheme || "default");
+  }
+  /**
+   * Apply theme-specific styles
+   */
+  applyThemeStyles(theme) {
+    this.removeStyleElement("ai-theme-styles");
+    if (theme === "default") {
+      return;
+    }
+    let themeStyles = "";
+    if (theme === "imessage") {
+      themeStyles = `
+        .ai-chat-container-imessage {
+          display: flex !important;
+          flex-direction: column !important;
+          height: 100% !important;
+          background: var(--background-primary) !important;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif !important;
+        }
+        
+        .ai-chat-messages-imessage {
+          flex: 1 !important;
+          overflow-y: auto !important;
+          padding: 16px !important;
+          background: var(--background-primary) !important;
+          scroll-behavior: smooth !important;
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 12px !important;
+        }
+        
+        /* iMessage Header */
+        .imessage-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 16px 20px;
+          border-bottom: 1px solid var(--background-modifier-border);
+          background: rgba(var(--background-secondary-rgb), 0.8);
+          backdrop-filter: blur(24px);
+        }
+        
+        .imessage-header-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        
+        .imessage-avatar {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #007AFF, #5856D6);
+          color: white;
+          font-size: 14px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .imessage-header-info h3 {
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--text-normal);
+          margin: 0 0 2px 0;
+        }
+        
+        .imessage-header-info span {
+          font-size: 12px;
+          color: var(--text-muted);
+        }
+        
+        .imessage-clear-btn {
+          background: none;
+          border: none;
+          color: #007AFF;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          padding: 6px 12px;
+          border-radius: 6px;
+          transition: background-color 0.2s;
+        }
+        
+        .imessage-clear-btn:hover {
+          background-color: rgba(0, 122, 255, 0.1);
+        }
+        
+        /* iMessage Bubbles */
+        .imessage-bubble-container {
+          display: flex;
+          flex-direction: column;
+          max-width: 80%;
+          gap: 4px;
+        }
+        
+        .imessage-bubble-container.user {
+          align-self: flex-end;
+          align-items: flex-end;
+        }
+        
+        .imessage-bubble-container.assistant {
+          align-self: flex-start;
+          align-items: flex-start;
+        }
+        
+        .imessage-bubble {
+          padding: 12px 16px;
+          border-radius: 18px;
+          font-size: 15px;
+          line-height: 1.4;
+          word-wrap: break-word;
+          max-width: 100%;
+        }
+        
+        .imessage-bubble.user {
+          background-color: #007AFF;
+          color: white;
+          border-bottom-right-radius: 6px;
+        }
+        
+        .imessage-bubble.assistant {
+          background-color: #E9E9EB;
+          color: #000;
+          border-bottom-left-radius: 6px;
+        }
+        
+        .theme-dark .imessage-bubble.assistant {
+          background-color: #3A3A3C;
+          color: #fff;
+        }
+        
+        .imessage-timestamp {
+          font-size: 11px;
+          color: var(--text-muted);
+          padding: 0 8px;
+          margin-top: 2px;
+        }
+        
+        /* iMessage Input */
+        .imessage-input-container {
+          display: flex;
+          align-items: flex-end;
+          gap: 8px;
+          padding: 12px 16px;
+          border-top: 1px solid var(--background-modifier-border);
+          background: rgba(var(--background-primary-rgb), 0.8);
+          backdrop-filter: blur(24px);
+        }
+        
+        .imessage-input-wrapper {
+          position: relative;
+          flex: 1;
+        }
+        
+        .imessage-input {
+          width: 100%;
+          resize: none;
+          border-radius: 21px;
+          border: 1px solid var(--background-modifier-border);
+          background: var(--background-secondary);
+          padding: 10px 16px 10px 16px;
+          padding-right: 44px;
+          font-size: 15px;
+          color: var(--text-normal);
+          font-family: inherit;
+          outline: none;
+          transition: all 0.2s ease;
+          min-height: 42px;
+          max-height: 128px;
+        }
+        
+        .imessage-input:focus {
+          border-color: #007AFF;
+          background: var(--background-primary);
+          box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.1);
+        }
+        
+        .imessage-input::placeholder {
+          color: var(--text-muted);
+        }
+        
+        .imessage-send-btn {
+          position: absolute;
+          right: 6px;
+          bottom: 6px;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          border: none;
+          background-color: #007AFF;
+          color: white;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background-color 0.2s ease;
+          font-size: 14px;
+        }
+        
+        .imessage-send-btn:hover:not(:disabled) {
+          background-color: #0066CC;
+        }
+        
+        .imessage-send-btn:disabled {
+          background-color: var(--background-modifier-border);
+          cursor: not-allowed;
+        }
+        
+        /* Empty state */
+        .imessage-empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          text-align: center;
+          color: var(--text-muted);
+        }
+        
+        .imessage-empty-icon {
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #007AFF, #5856D6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 32px;
+          margin-bottom: 16px;
+        }
+      `;
+    } else if (theme === "minimal") {
+      themeStyles = `
+        .ai-chat-container-minimal {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          background: var(--background-primary);
+          font-family: var(--font-interface);
+          border: 1px solid var(--background-modifier-border);
+        }
+        
+        .ai-chat-messages-minimal {
+          flex: 1;
+          overflow-y: auto;
+          padding: 12px;
+          space-y: 8px;
+          background: var(--background-primary);
+        }
+        
+        .ai-chat-messages-minimal > * + * {
+          margin-top: 8px;
+        }
+        
+        /* Additional minimal theme utilities */
+        .text-gray-100 { color: var(--text-faint); }
+        .text-gray-300 { color: var(--text-muted); }
+        .text-gray-500 { color: var(--text-muted); }
+        .text-gray-700 { color: var(--text-normal); }
+        .text-gray-900 { color: var(--text-normal); }
+        .bg-gray-100 { background-color: var(--background-secondary); }
+        .bg-gray-800 { background-color: var(--background-secondary); }
+        .border-gray-200 { border-color: var(--background-modifier-border); }
+        .border-gray-700 { border-color: var(--background-modifier-border); }
+        .border-l-2 { border-left-width: 2px; }
+        .border-blue-500 { border-color: var(--interactive-accent); }
+        .bg-green-500 { background-color: #10b981; }
+        .w-2 { width: 0.5rem; }
+        .h-2 { height: 0.5rem; }
+        .pl-3 { padding-left: 0.75rem; }
+        .hover\\:text-gray-700:hover { color: var(--text-normal); }
+        .hover\\:text-gray-300:hover { color: var(--text-muted); }
+        .hover\\:text-blue-700:hover { color: var(--interactive-accent-hover); }
+        .text-blue-500 { color: var(--interactive-accent); }
+        .disabled\\:text-gray-400:disabled { color: var(--text-faint); }
+        .bg-transparent { background-color: transparent; }
+        .placeholder\\:text-gray-400::placeholder { color: var(--text-muted); }
+        .min-h-\\[20px\\] { min-height: 20px; }
+      `;
+    } else if (theme === "discord") {
+      themeStyles = `
+        .ai-chat-container-discord {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          background: var(--background-primary);
+          font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        
+        .ai-chat-messages-discord {
+          flex: 1;
+          overflow-y: auto;
+          padding: 16px;
+          space-y: 8px;
+          background: var(--background-primary);
+        }
+        
+        .ai-chat-messages-discord > * + * {
+          margin-top: 8px;
+        }
+        
+        /* Discord theme utilities */
+        .bg-gray-50 { background-color: var(--background-secondary); }
+        .bg-gray-800 { background-color: var(--background-secondary); }
+        .bg-white { background-color: var(--background-primary); }
+        .bg-gray-700 { background-color: var(--background-secondary); }
+        .border-gray-300 { border-color: var(--background-modifier-border); }
+        .border-gray-600 { border-color: var(--background-modifier-border); }
+        .w-px { width: 1px; }
+        .h-6 { height: 1.5rem; }
+        .bg-gray-300 { background-color: var(--background-modifier-border); }
+        .bg-gray-600 { background-color: var(--background-modifier-border); }
+        .text-gray-600 { color: var(--text-muted); }
+        .text-gray-400 { color: var(--text-muted); }
+        .text-gray-500 { color: var(--text-muted); }
+        .hover\\:text-gray-700:hover { color: var(--text-normal); }
+        .hover\\:text-gray-300:hover { color: var(--text-muted); }
+        .hover\\:bg-gray-200:hover { background-color: var(--background-modifier-hover); }
+        .hover\\:bg-gray-700:hover { background-color: var(--background-modifier-hover); }
+        .bg-blue-500 { background-color: var(--interactive-accent); }
+        .hover\\:bg-blue-600:hover { background-color: var(--interactive-accent-hover); }
+        .disabled\\:bg-gray-400:disabled { background-color: var(--text-faint); }
+        .disabled\\:cursor-not-allowed:disabled { cursor: not-allowed; }
+        .placeholder\\:text-gray-500::placeholder { color: var(--text-muted); }
+        .placeholder\\:text-gray-400::placeholder { color: var(--text-muted); }
+        .p-4 { padding: 1rem; }
+        .p-2 { padding: 0.5rem; }
+        .rounded-md { border-radius: 0.375rem; }
+        .flex-shrink-0 { flex-shrink: 0; }
+        .bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)); }
+        .from-blue-500 { --tw-gradient-from: var(--interactive-accent); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(var(--interactive-accent-rgb), 0)); }
+        .to-purple-600 { --tw-gradient-to: #9333ea; }
+        .items-baseline { align-items: baseline; }
+        .flex-1 { flex: 1; }
+      `;
+    }
+    if (themeStyles) {
+      this.addStyleElement("ai-theme-styles", themeStyles);
+    }
+  }
+  /**
+   * Add Tailwind-like utility classes for themed components
+   */
+  addTailwindUtilities() {
+    const styleId = "ai-tailwind-utilities";
+    const styles = `
+      /* Layout utilities with !important */
+      .flex { display: flex !important; }
+      .flex-col { flex-direction: column !important; }
+      .items-end { align-items: flex-end !important; }
+      .items-start { align-items: flex-start !important; }
+      .items-center { align-items: center !important; }
+      .items-baseline { align-items: baseline !important; }
+      .justify-between { justify-content: space-between !important; }
+      .justify-center { justify-content: center !important; }
+      .flex-1 { flex: 1 !important; }
+      .flex-shrink-0 { flex-shrink: 0 !important; }
+      
+      /* Spacing utilities with !important */
+      .gap-1 { gap: 0.25rem !important; }
+      .gap-2 { gap: 0.5rem !important; }
+      .gap-3 { gap: 0.75rem !important; }
+      .p-1\\.5 { padding: 0.375rem !important; }
+      .p-2 { padding: 0.5rem !important; }
+      .p-3 { padding: 0.75rem !important; }
+      .p-4 { padding: 1rem !important; }
+      .px-2 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+      .px-3 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+      .px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
+      .py-2\\.5 { padding-top: 0.625rem !important; padding-bottom: 0.625rem !important; }
+      .py-3 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+      .pr-12 { padding-right: 3rem !important; }
+      .mt-1 { margin-top: 0.25rem !important; }
+      .mb-4 { margin-bottom: 1rem !important; }
+      
+      /* Sizing utilities with !important */
+      .max-w-\\[80\\%\\] { max-width: 80% !important; }
+      .h-10 { height: 2.5rem !important; }
+      .w-10 { width: 2.5rem !important; }
+      .h-16 { height: 4rem !important; }
+      .w-16 { width: 4rem !important; }
+      .h-full { height: 100% !important; }
+      .w-full { width: 100% !important; }
+      .w-4 { width: 1rem !important; }
+      .h-4 { height: 1rem !important; }
+      .min-h-\\[42px\\] { min-height: 42px !important; }
+      .max-h-32 { max-height: 8rem !important; }
+      
+      /* Border utilities with !important */
+      .rounded-2xl { border-radius: 1rem !important; }
+      .rounded-full { border-radius: 9999px !important; }
+      .rounded-br-md { border-bottom-right-radius: 0.375rem !important; }
+      .rounded-bl-md { border-bottom-left-radius: 0.375rem !important; }
+      .border { border-width: 1px !important; }
+      .border-t { border-top-width: 1px !important; }
+      .border-b { border-bottom-width: 1px !important; }
+      .border-border { border-color: var(--background-modifier-border) !important; }
+      
+      /* Typography utilities with !important */
+      .text-\\[15px\\] { font-size: 15px !important; }
+      .text-\\[12px\\] { font-size: 12px !important; }
+      .text-\\[11px\\] { font-size: 11px !important; }
+      .text-sm { font-size: 0.875rem !important; }
+      .text-xs { font-size: 0.75rem !important; }
+      .text-2xl { font-size: 1.5rem !important; }
+      .leading-relaxed { line-height: 1.625 !important; }
+      .font-semibold { font-weight: 600 !important; }
+      .font-medium { font-weight: 500 !important; }
+      .text-center { text-align: center !important; }
+      
+      /* Color utilities with !important */
+      .text-white { color: white !important; }
+      .text-black { color: black !important; }
+      .text-muted-foreground { color: var(--text-muted) !important; }
+      .text-foreground { color: var(--text-normal) !important; }
+      .bg-\\[\\#007AFF\\] { background-color: #007AFF !important; }
+      .bg-\\[\\#E9E9EB\\] { background-color: #E9E9EB !important; }
+      .bg-gradient-to-br { background: linear-gradient(135deg, var(--tw-gradient-from), var(--tw-gradient-to)) !important; }
+      .from-\\[\\#007AFF\\] { --tw-gradient-from: #007AFF !important; }
+      .to-\\[\\#5856D6\\] { --tw-gradient-to: #5856D6 !important; }
+      .bg-background\\/80 { background-color: rgba(var(--background-primary-rgb), 0.8) !important; }
+      .bg-muted\\/50 { background-color: rgba(var(--background-secondary-rgb), 0.5) !important; }
+      
+      /* Position utilities with !important */
+      .absolute { position: absolute !important; }
+      .relative { position: relative !important; }
+      .right-2 { right: 0.5rem !important; }
+      .bottom-1\\.5 { bottom: 0.375rem !important; }
+      
+      /* Other utilities with !important */
+      .backdrop-blur-xl { backdrop-filter: blur(24px) !important; }
+      .resize-none { resize: none !important; }
+      .transition-all { transition-property: all !important; }
+      .duration-200 { transition-duration: 200ms !important; }
+      
+      /* Focus utilities with !important */
+      .focus\\:outline-none:focus { outline: none !important; }
+      .focus\\:ring-2:focus { box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.3) !important; }
+      .focus\\:ring-\\[\\#007AFF\\]\\/50:focus { box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.5) !important; }
+      .focus\\:border-\\[\\#007AFF\\]:focus { border-color: #007AFF !important; }
+      
+      /* Hover utilities with !important */
+      .hover\\:bg-\\[\\#0066CC\\]:hover { background-color: #0066CC !important; }
+      .hover\\:text-\\[\\#0066CC\\]:hover { color: #0066CC !important; }
+      .hover\\:bg-gray-100:hover { background-color: rgba(var(--background-modifier-hover-rgb), 1) !important; }
+      .hover\\:bg-gray-700:hover { background-color: rgba(var(--background-modifier-hover-rgb), 1) !important; }
+      
+      /* Dark theme overrides with !important */
+      .dark .dark\\:bg-\\[\\#3A3A3C\\] { background-color: #3A3A3C !important; }
+      .dark .dark\\:text-white { color: white !important; }
+      .dark .dark\\:hover\\:bg-gray-700:hover { background-color: rgba(55, 65, 81, 1) !important; }
+      
+      /* Placeholder utilities with !important */
+      .placeholder\\:text-muted-foreground::placeholder { color: var(--text-muted) !important; }
+    `;
+    this.addStyleElement(styleId, styles);
   }
   /**
    * Initialize all styles including accessibility
@@ -26668,6 +27133,22 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
       await this.settingsManager.updateSetting("chatPanelSide", value);
       new import_obsidian3.Notice("Chat panel side changed. Restart Obsidian or reload the plugin to apply changes.");
     }));
+    new import_obsidian3.Setting(containerEl).setName("Chat theme").setDesc("Choose the visual style for the chat interface").addDropdown((dropdown) => dropdown.addOption("default", "Default (Obsidian)").addOption("imessage", "iMessage Style").addOption("minimal", "Minimal").addOption("discord", "Discord Style").setValue(settings.chatTheme).onChange(async (value) => {
+      await this.settingsManager.updateSetting("chatTheme", value);
+      const plugin = this.plugin;
+      if (plugin.stylesManager) {
+        const newSettings = this.settingsManager.getSettings();
+        plugin.stylesManager.applySettingsBasedStyles(newSettings);
+        console.log("\u{1F3A8} Applied new theme:", value);
+      }
+      const chatViews = this.app.workspace.getLeavesOfType("ai-chat-view");
+      chatViews.forEach((leaf) => {
+        if (leaf.view && leaf.view.refresh) {
+          leaf.view.refresh();
+        }
+      });
+      new import_obsidian3.Notice("Chat theme changed. Changes applied immediately.");
+    }));
   }
   /**
    * Add advanced settings and testing
@@ -26722,7 +27203,7 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
 };
 
 // src/ui/react-chat-view.tsx
-var import_react3 = __toESM(require_react());
+var import_react4 = __toESM(require_react());
 var import_obsidian4 = require("obsidian");
 var import_client = __toESM(require_client());
 
@@ -26756,23 +27237,348 @@ var ContextProviders = ({
 };
 
 // src/react/ChatInterface.tsx
-var import_react2 = __toESM(require_react());
+var import_react3 = __toESM(require_react());
+
+// src/react/themed-components/ChatBubble.tsx
 var import_jsx_runtime2 = __toESM(require_jsx_runtime());
+function cn(...classes) {
+  return classes.filter(Boolean).join(" ");
+}
+function ChatBubble({ message, isUser, timestamp, theme }) {
+  if (theme === "default") {
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: `ai-chat-message ai-chat-message-${isUser ? "user" : "assistant"}`, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ai-chat-message-label", children: isUser ? "You" : "AI Assistant" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ai-chat-message-content", children: message }),
+      timestamp && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ai-chat-timestamp", children: timestamp })
+    ] });
+  }
+  if (theme === "imessage") {
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: cn("flex flex-col gap-1", isUser ? "items-end" : "items-start"), children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+        "div",
+        {
+          className: cn(
+            "max-w-[80%] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed",
+            isUser ? "bg-[#007AFF] text-white rounded-br-md" : "bg-[#E9E9EB] dark:bg-[#3A3A3C] text-black dark:text-white rounded-bl-md"
+          ),
+          children: message
+        }
+      ),
+      timestamp && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "text-[11px] text-muted-foreground px-2", children: timestamp })
+    ] });
+  }
+  if (theme === "minimal") {
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: cn("flex flex-col gap-1", isUser ? "items-end" : "items-start"), children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+        "div",
+        {
+          className: cn(
+            "max-w-[85%] px-3 py-2 text-sm",
+            isUser ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg" : "border-l-2 border-blue-500 pl-3 text-gray-700 dark:text-gray-300"
+          ),
+          children: message
+        }
+      ),
+      timestamp && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "text-xs text-gray-500 px-1", children: timestamp })
+    ] });
+  }
+  if (theme === "discord") {
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "flex gap-3 py-1", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm", children: isUser ? "Y" : "AI" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "flex-1", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "flex items-baseline gap-2 mb-1", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "font-medium text-gray-900 dark:text-gray-100 text-sm", children: isUser ? "You" : "AI Assistant" }),
+          timestamp && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "text-xs text-gray-500", children: timestamp })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "text-gray-800 dark:text-gray-200 text-sm leading-relaxed", children: message })
+      ] })
+    ] });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: `ai-chat-message ai-chat-message-${isUser ? "user" : "assistant"}`, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ai-chat-message-content", children: message }) });
+}
+
+// src/react/themed-components/ChatHeader.tsx
+var import_jsx_runtime3 = __toESM(require_jsx_runtime());
+function ChatHeader({ name, avatar, status = "AI Assistant", onClear, theme }) {
+  if (theme === "default") {
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "ai-chat-header", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { className: "ai-chat-title", children: name }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ai-chat-provider-label", children: status }),
+      onClear && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+        "button",
+        {
+          className: "ai-chat-clear-btn",
+          onClick: onClear,
+          title: "Clear chat history",
+          children: "Clear"
+        }
+      )
+    ] });
+  }
+  if (theme === "imessage") {
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "flex items-center justify-between px-4 py-3 border-b border-border bg-background/80 backdrop-blur-xl", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "h-10 w-10 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] text-white text-sm font-medium flex items-center justify-center", children: name.slice(0, 2).toUpperCase() }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "flex flex-col", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "font-semibold text-[15px] text-foreground", children: name }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "text-[12px] text-muted-foreground", children: status })
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "flex items-center gap-1", children: onClear && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+        "button",
+        {
+          onClick: onClear,
+          className: "text-[#007AFF] hover:text-[#0066CC] text-sm font-medium px-3 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors",
+          children: "Clear"
+        }
+      ) })
+    ] });
+  }
+  if (theme === "minimal") {
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "w-2 h-2 rounded-full bg-green-500" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "text-sm font-medium text-gray-700 dark:text-gray-300", children: name })
+      ] }),
+      onClear && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+        "button",
+        {
+          onClick: onClear,
+          className: "text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300",
+          children: "Clear"
+        }
+      )
+    ] });
+  }
+  if (theme === "discord") {
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "text-gray-600 dark:text-gray-400", children: "#" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "font-semibold text-gray-900 dark:text-gray-100", children: name }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "w-px h-6 bg-gray-300 dark:bg-gray-600" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "text-sm text-gray-500 dark:text-gray-400", children: status })
+      ] }),
+      onClear && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+        "button",
+        {
+          onClick: onClear,
+          className: "text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
+          children: "Clear"
+        }
+      )
+    ] });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ai-chat-header", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { className: "ai-chat-title", children: name }) });
+}
+
+// src/react/themed-components/ChatInput.tsx
+var import_react2 = __toESM(require_react());
+var import_jsx_runtime4 = __toESM(require_jsx_runtime());
+function cn2(...classes) {
+  return classes.filter(Boolean).join(" ");
+}
+function ChatInput({ onSend, placeholder = "Ask me anything...", disabled, theme }) {
+  const [message, setMessage] = (0, import_react2.useState)("");
+  const handleSend = () => {
+    if (message.trim() && !disabled) {
+      onSend(message.trim());
+      setMessage("");
+    }
+  };
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+  if (theme === "default") {
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "ai-chat-input-container", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        "textarea",
+        {
+          className: "ai-chat-input",
+          value: message,
+          onChange: (e) => setMessage(e.target.value),
+          onKeyDown: handleKeyDown,
+          placeholder,
+          disabled
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        "button",
+        {
+          className: "ai-chat-send-btn",
+          onClick: handleSend,
+          disabled: !message.trim() || disabled,
+          title: disabled ? "Sending message..." : "Send message (Enter)",
+          children: disabled ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "ai-chat-spinner" }) : "\u2708\uFE0F"
+        }
+      )
+    ] });
+  }
+  if (theme === "imessage") {
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "flex items-end gap-2 p-3 border-t border-border bg-background/80 backdrop-blur-xl", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "relative flex-1", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        "textarea",
+        {
+          value: message,
+          onChange: (e) => setMessage(e.target.value),
+          onKeyDown: handleKeyDown,
+          placeholder,
+          disabled,
+          rows: 1,
+          className: cn2(
+            "w-full resize-none rounded-full border border-border bg-muted/50 px-4 py-2.5 pr-12",
+            "text-[15px] placeholder:text-muted-foreground",
+            "focus:outline-none focus:ring-2 focus:ring-[#007AFF]/50 focus:border-[#007AFF]",
+            "max-h-32 min-h-[42px]",
+            "transition-all duration-200"
+          ),
+          style: {
+            height: "auto",
+            minHeight: "42px"
+          },
+          onInput: (e) => {
+            const target = e.target;
+            target.style.height = "auto";
+            target.style.height = `${Math.min(target.scrollHeight, 128)}px`;
+          }
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        "button",
+        {
+          onClick: handleSend,
+          disabled: !message.trim() || disabled,
+          className: cn2(
+            "absolute right-2 bottom-1.5 p-1.5 rounded-full transition-all duration-200",
+            message.trim() ? "bg-[#007AFF] text-white hover:bg-[#0066CC]" : "bg-muted text-muted-foreground"
+          ),
+          children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
+        }
+      )
+    ] }) });
+  }
+  if (theme === "minimal") {
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "flex items-center gap-2 p-3 border-t border-gray-200 dark:border-gray-700", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        "textarea",
+        {
+          value: message,
+          onChange: (e) => setMessage(e.target.value),
+          onKeyDown: handleKeyDown,
+          placeholder,
+          disabled,
+          rows: 1,
+          className: "flex-1 resize-none bg-transparent text-sm placeholder:text-gray-400 focus:outline-none",
+          style: {
+            height: "auto",
+            minHeight: "20px"
+          }
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        "button",
+        {
+          onClick: handleSend,
+          disabled: !message.trim() || disabled,
+          className: "text-blue-500 hover:text-blue-700 disabled:text-gray-400 text-sm",
+          children: "Send"
+        }
+      )
+    ] });
+  }
+  if (theme === "discord") {
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "p-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "flex items-center gap-3 bg-white dark:bg-gray-700 rounded-lg px-3 py-2 border border-gray-300 dark:border-gray-600", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        "textarea",
+        {
+          value: message,
+          onChange: (e) => setMessage(e.target.value),
+          onKeyDown: handleKeyDown,
+          placeholder,
+          disabled,
+          rows: 1,
+          className: "flex-1 resize-none bg-transparent text-sm placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none",
+          style: {
+            height: "auto",
+            minHeight: "20px"
+          }
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        "button",
+        {
+          onClick: handleSend,
+          disabled: !message.trim() || disabled,
+          className: "p-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors",
+          children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
+        }
+      )
+    ] }) });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "ai-chat-input-container", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+      "textarea",
+      {
+        className: "ai-chat-input",
+        value: message,
+        onChange: (e) => setMessage(e.target.value),
+        onKeyDown: handleKeyDown,
+        placeholder,
+        disabled
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+      "button",
+      {
+        className: "ai-chat-send-btn",
+        onClick: handleSend,
+        disabled: !message.trim() || disabled,
+        children: "\u2708\uFE0F"
+      }
+    )
+  ] });
+}
+
+// src/react/ChatInterface.tsx
+var import_jsx_runtime5 = __toESM(require_jsx_runtime());
 var ChatInterface = () => {
-  const [messages, setMessages] = (0, import_react2.useState)([]);
-  const [inputValue, setInputValue] = (0, import_react2.useState)("");
-  const [isProcessing, setIsProcessing] = (0, import_react2.useState)(false);
-  const messagesEndRef = (0, import_react2.useRef)(null);
-  const textareaRef = (0, import_react2.useRef)(null);
+  const [messages, setMessages] = (0, import_react3.useState)([]);
+  const [isProcessing, setIsProcessing] = (0, import_react3.useState)(false);
+  const [currentTheme, setCurrentTheme] = (0, import_react3.useState)("default");
+  const messagesEndRef = (0, import_react3.useRef)(null);
   const aiService = useAIService();
   const settingsManager = useSettings();
-  (0, import_react2.useEffect)(() => {
+  (0, import_react3.useEffect)(() => {
     var _a;
     (_a = messagesEndRef.current) == null ? void 0 : _a.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-  (0, import_react2.useEffect)(() => {
-    const settings = settingsManager.getSettings();
-    const providerName = getProviderDisplayName(settings.aiProvider);
+  (0, import_react3.useEffect)(() => {
+    const settings2 = settingsManager.getSettings();
+    const newTheme = settings2.chatTheme || "default";
+    console.log("=== CHAT INTERFACE: Theme change detected:", newTheme);
+    console.log("=== CHAT INTERFACE: Previous theme:", currentTheme);
+    console.log("=== CHAT INTERFACE: Will render components with theme:", newTheme);
+    if (newTheme !== currentTheme) {
+      setCurrentTheme(newTheme);
+      console.log("=== CHAT INTERFACE: Theme state updated to:", newTheme);
+    }
+  }, [settingsManager, currentTheme]);
+  (0, import_react3.useEffect)(() => {
+    const settings2 = settingsManager.getSettings();
+    const initialTheme = settings2.chatTheme || "default";
+    console.log("=== CHAT INTERFACE: Initial theme:", initialTheme);
+    console.log("=== CHAT INTERFACE: Component mounted with theme:", initialTheme);
+    setCurrentTheme(initialTheme);
+  }, []);
+  (0, import_react3.useEffect)(() => {
+    console.log("=== CHAT INTERFACE: currentTheme state changed to:", currentTheme);
+    console.log("=== CHAT INTERFACE: Will use container class:", currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`);
+  }, [currentTheme]);
+  (0, import_react3.useEffect)(() => {
+    const settings2 = settingsManager.getSettings();
+    const providerName = getProviderDisplayName(settings2.aiProvider);
     setMessages([{
       id: "welcome",
       type: "assistant",
@@ -26790,14 +27596,12 @@ var ChatInterface = () => {
     };
     return names[provider] || provider;
   };
-  const handleSendMessage = async () => {
-    const message = inputValue.trim();
+  const handleSendMessage = async (message) => {
     if (!message || isProcessing)
       return;
     console.log("=== REACT CHAT: Starting message send ===");
     console.log("Chat message:", message);
     setIsProcessing(true);
-    setInputValue("");
     const userMessage = {
       id: `user-${Date.now()}`,
       type: "user",
@@ -26852,24 +27656,9 @@ var ChatInterface = () => {
       setIsProcessing(false);
     }
   };
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-  const handleInputChange = (e) => {
-    setInputValue(e.target.value);
-    const textarea = e.target;
-    textarea.style.height = "auto";
-    textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
-  };
-  const processMessageContent = (content) => {
-    return content.replace(/\n/g, "<br>").replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\*(.*?)\*/g, "<em>$1</em>").replace(/`(.*?)`/g, "<code>$1</code>");
-  };
   const clearChat = () => {
-    const settings = settingsManager.getSettings();
-    const providerName = getProviderDisplayName(settings.aiProvider);
+    const settings2 = settingsManager.getSettings();
+    const providerName = getProviderDisplayName(settings2.aiProvider);
     setMessages([{
       id: "welcome",
       type: "assistant",
@@ -26877,81 +27666,55 @@ var ChatInterface = () => {
       timestamp: new Date()
     }]);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ai-chat-container", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ai-chat-header", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "ai-chat-title", children: "AI Assistant" }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ai-chat-provider-label", children: [
-        "Using: ",
-        getProviderDisplayName(settingsManager.getSettings().aiProvider)
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-        "button",
+  const settings = settingsManager.getSettings();
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+      ChatHeader,
+      {
+        name: "AI Assistant",
+        status: `Using: ${getProviderDisplayName(settings.aiProvider)}`,
+        onClear: clearChat,
+        theme: currentTheme
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-messages" : `ai-chat-messages-${currentTheme}`, children: [
+      messages.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "flex flex-col items-center justify-center h-full text-center text-muted-foreground", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "w-16 h-16 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] flex items-center justify-center mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "text-2xl text-white", children: "\u{1F4AC}" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "text-sm", children: "No messages yet" }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "text-xs mt-1", children: "Start the conversation!" })
+      ] }) : messages.map((message) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        ChatBubble,
         {
-          className: "ai-chat-clear-btn",
-          onClick: clearChat,
-          title: "Clear chat history",
-          children: "Clear"
-        }
-      )
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ai-chat-messages", children: [
-      messages.map((message) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
-        "div",
-        {
-          className: `ai-chat-message ai-chat-message-${message.type}`,
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ai-chat-message-label", children: message.type === "user" ? "You" : "AI Assistant" }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-              "div",
-              {
-                className: `ai-chat-message-content ${message.isThinking ? "ai-chat-thinking" : ""}`,
-                dangerouslySetInnerHTML: {
-                  __html: message.isThinking ? '<div class="ai-chat-thinking-dots"><span></span><span></span><span></span></div>Thinking...' : processMessageContent(message.content)
-                }
-              }
-            ),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ai-chat-timestamp", children: message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })
-          ]
+          message: message.isThinking ? "Thinking..." : message.content,
+          isUser: message.type === "user",
+          timestamp: message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          theme: currentTheme
         },
         message.id
       )),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { ref: messagesEndRef })
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { ref: messagesEndRef })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "ai-chat-input-container", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-        "textarea",
-        {
-          ref: textareaRef,
-          className: "ai-chat-input",
-          value: inputValue,
-          onChange: handleInputChange,
-          onKeyDown: handleKeyDown,
-          placeholder: "Ask me anything...",
-          disabled: isProcessing
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-        "button",
-        {
-          className: "ai-chat-send-btn",
-          onClick: handleSendMessage,
-          disabled: isProcessing || !inputValue.trim(),
-          title: isProcessing ? "Sending message..." : "Send message (Enter)",
-          children: isProcessing ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ai-chat-spinner" }) : "\u2708\uFE0F"
-        }
-      )
-    ] })
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+      ChatInput,
+      {
+        onSend: handleSendMessage,
+        placeholder: "Ask me anything...",
+        disabled: isProcessing,
+        theme: currentTheme
+      }
+    )
   ] });
 };
 
 // src/ui/react-chat-view.tsx
-var import_jsx_runtime3 = __toESM(require_jsx_runtime());
+var import_jsx_runtime6 = __toESM(require_jsx_runtime());
 var VIEW_TYPE_AI_CHAT = "ai-chat-view";
 var ReactChatView = class extends import_obsidian4.ItemView {
-  constructor(leaf, aiService, settingsManager) {
+  constructor(leaf, aiService, settingsManager, stylesManager) {
     super(leaf);
     this.aiService = aiService;
     this.settingsManager = settingsManager;
+    this.stylesManager = stylesManager;
     this.root = null;
   }
   getViewType() {
@@ -26967,13 +27730,13 @@ var ReactChatView = class extends import_obsidian4.ItemView {
     console.log("Opening React chat view...");
     this.root = (0, import_client.createRoot)(this.contentEl);
     this.root.render(
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_react3.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_react4.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
         ContextProviders,
         {
           app: this.app,
           aiService: this.aiService,
           settingsManager: this.settingsManager,
-          children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(ChatInterface, {})
+          children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(ChatInterface, {})
         }
       ) })
     );
@@ -26989,14 +27752,16 @@ var ReactChatView = class extends import_obsidian4.ItemView {
    */
   refresh() {
     if (this.root) {
+      const settings = this.settingsManager.getSettings();
+      const themeKey = `chat-${settings.chatTheme}-${Date.now()}`;
       this.root.render(
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_react3.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_react4.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
           ContextProviders,
           {
             app: this.app,
             aiService: this.aiService,
             settingsManager: this.settingsManager,
-            children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(ChatInterface, {})
+            children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(ChatInterface, {}, themeKey)
           }
         ) })
       );
@@ -27029,6 +27794,8 @@ var AIObsidianPlugin = class extends import_obsidian5.Plugin {
     await this.aiService.initialize();
     this.stylesManager = new StylesManager();
     this.stylesManager.initializeAllStyles();
+    const settings = this.settingsManager.getSettings();
+    this.stylesManager.applySettingsBasedStyles(settings);
     console.log("\u2705 Core services initialized");
   }
   /**
@@ -27054,7 +27821,7 @@ var AIObsidianPlugin = class extends import_obsidian5.Plugin {
     console.log("\u{1F3A8} Initializing UI...");
     this.registerView(
       VIEW_TYPE_AI_CHAT,
-      (leaf) => new ReactChatView(leaf, this.aiService, this.settingsManager)
+      (leaf) => new ReactChatView(leaf, this.aiService, this.settingsManager, this.stylesManager)
     );
     this.addSettingTab(new AIObsidianSettingTab(this.app, this, this.settingsManager));
     this.app.workspace.onLayoutReady(() => {

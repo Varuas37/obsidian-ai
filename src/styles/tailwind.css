@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom overrides for Obsidian integration */
+@layer base {
+  * {
+    --tw-ring-color: rgba(var(--interactive-accent-rgb), 0.3);
+  }
+}

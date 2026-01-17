@@ -14,6 +14,7 @@ export class StylesManager {
     this.addAnimations();
     this.addResponsiveStyles();
     this.addThemeStyles();
+    this.addTailwindUtilities();
   }
 
   /**
@@ -673,9 +674,10 @@ export class StylesManager {
   }
 
   /**
-   * Apply settings-based styles
+   * Apply settings-based styles including themes
    */
   applySettingsBasedStyles(settings: any): void {
+    // Panel position styles
     if (settings.chatPanelSide === 'left') {
       this.addStyleElement('ai-panel-position', `
         .workspace-split.mod-left-split .ai-chat-container {
@@ -689,6 +691,475 @@ export class StylesManager {
         }
       `);
     }
+
+    // Apply theme-specific styles
+    this.applyThemeStyles(settings.chatTheme || 'default');
+  }
+
+  /**
+   * Apply theme-specific styles
+   */
+  private applyThemeStyles(theme: string): void {
+    // Remove existing theme styles
+    this.removeStyleElement('ai-theme-styles');
+
+    if (theme === 'default') {
+      // Default theme uses existing styles
+      return;
+    }
+
+    let themeStyles = '';
+
+    if (theme === 'imessage') {
+      themeStyles = `
+        .ai-chat-container-imessage {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          background: var(--background-primary);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        }
+        
+        .ai-chat-messages-imessage {
+          flex: 1;
+          overflow-y: auto;
+          padding: 16px;
+          background: var(--background-primary);
+          scroll-behavior: smooth;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        
+        /* iMessage Header */
+        .imessage-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 16px 20px;
+          border-bottom: 1px solid var(--background-modifier-border);
+          background: rgba(var(--background-secondary-rgb), 0.8);
+          backdrop-filter: blur(24px);
+        }
+        
+        .imessage-header-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        
+        .imessage-avatar {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #007AFF, #5856D6);
+          color: white;
+          font-size: 14px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .imessage-header-info h3 {
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--text-normal);
+          margin: 0 0 2px 0;
+        }
+        
+        .imessage-header-info span {
+          font-size: 12px;
+          color: var(--text-muted);
+        }
+        
+        .imessage-clear-btn {
+          background: none;
+          border: none;
+          color: #007AFF;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          padding: 6px 12px;
+          border-radius: 6px;
+          transition: background-color 0.2s;
+        }
+        
+        .imessage-clear-btn:hover {
+          background-color: rgba(0, 122, 255, 0.1);
+        }
+        
+        /* iMessage Bubbles */
+        .imessage-bubble-container {
+          display: flex;
+          flex-direction: column;
+          max-width: 80%;
+          gap: 4px;
+        }
+        
+        .imessage-bubble-container.user {
+          align-self: flex-end;
+          align-items: flex-end;
+        }
+        
+        .imessage-bubble-container.assistant {
+          align-self: flex-start;
+          align-items: flex-start;
+        }
+        
+        .imessage-bubble {
+          padding: 12px 16px;
+          border-radius: 18px;
+          font-size: 15px;
+          line-height: 1.4;
+          word-wrap: break-word;
+          max-width: 100%;
+        }
+        
+        .imessage-bubble.user {
+          background-color: #007AFF;
+          color: white;
+          border-bottom-right-radius: 6px;
+        }
+        
+        .imessage-bubble.assistant {
+          background-color: #E9E9EB;
+          color: #000;
+          border-bottom-left-radius: 6px;
+        }
+        
+        .theme-dark .imessage-bubble.assistant {
+          background-color: #3A3A3C;
+          color: #fff;
+        }
+        
+        .imessage-timestamp {
+          font-size: 11px;
+          color: var(--text-muted);
+          padding: 0 8px;
+          margin-top: 2px;
+        }
+        
+        /* iMessage Input */
+        .imessage-input-container {
+          display: flex;
+          align-items: flex-end;
+          gap: 8px;
+          padding: 12px 16px;
+          border-top: 1px solid var(--background-modifier-border);
+          background: rgba(var(--background-primary-rgb), 0.8);
+          backdrop-filter: blur(24px);
+        }
+        
+        .imessage-input-wrapper {
+          position: relative;
+          flex: 1;
+        }
+        
+        .imessage-input {
+          width: 100%;
+          resize: none;
+          border-radius: 21px;
+          border: 1px solid var(--background-modifier-border);
+          background: var(--background-secondary);
+          padding: 10px 16px 10px 16px;
+          padding-right: 44px;
+          font-size: 15px;
+          color: var(--text-normal);
+          font-family: inherit;
+          outline: none;
+          transition: all 0.2s ease;
+          min-height: 42px;
+          max-height: 128px;
+        }
+        
+        .imessage-input:focus {
+          border-color: #007AFF;
+          background: var(--background-primary);
+          box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.1);
+        }
+        
+        .imessage-input::placeholder {
+          color: var(--text-muted);
+        }
+        
+        .imessage-send-btn {
+          position: absolute;
+          right: 6px;
+          bottom: 6px;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          border: none;
+          background-color: #007AFF;
+          color: white;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background-color 0.2s ease;
+          font-size: 14px;
+        }
+        
+        .imessage-send-btn:hover:not(:disabled) {
+          background-color: #0066CC;
+        }
+        
+        .imessage-send-btn:disabled {
+          background-color: var(--background-modifier-border);
+          cursor: not-allowed;
+        }
+        
+        /* Empty state */
+        .imessage-empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          text-align: center;
+          color: var(--text-muted);
+        }
+        
+        .imessage-empty-icon {
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #007AFF, #5856D6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 32px;
+          margin-bottom: 16px;
+        }
+      `;
+    } else if (theme === 'minimal') {
+      themeStyles = `
+        .ai-chat-container-minimal {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          background: var(--background-primary);
+          font-family: var(--font-interface);
+          border: 1px solid var(--background-modifier-border);
+        }
+        
+        .ai-chat-messages-minimal {
+          flex: 1;
+          overflow-y: auto;
+          padding: 12px;
+          space-y: 8px;
+          background: var(--background-primary);
+        }
+        
+        .ai-chat-messages-minimal > * + * {
+          margin-top: 8px;
+        }
+        
+        /* Additional minimal theme utilities */
+        .text-gray-100 { color: var(--text-faint); }
+        .text-gray-300 { color: var(--text-muted); }
+        .text-gray-500 { color: var(--text-muted); }
+        .text-gray-700 { color: var(--text-normal); }
+        .text-gray-900 { color: var(--text-normal); }
+        .bg-gray-100 { background-color: var(--background-secondary); }
+        .bg-gray-800 { background-color: var(--background-secondary); }
+        .border-gray-200 { border-color: var(--background-modifier-border); }
+        .border-gray-700 { border-color: var(--background-modifier-border); }
+        .border-l-2 { border-left-width: 2px; }
+        .border-blue-500 { border-color: var(--interactive-accent); }
+        .bg-green-500 { background-color: #10b981; }
+        .w-2 { width: 0.5rem; }
+        .h-2 { height: 0.5rem; }
+        .pl-3 { padding-left: 0.75rem; }
+        .hover\\:text-gray-700:hover { color: var(--text-normal); }
+        .hover\\:text-gray-300:hover { color: var(--text-muted); }
+        .hover\\:text-blue-700:hover { color: var(--interactive-accent-hover); }
+        .text-blue-500 { color: var(--interactive-accent); }
+        .disabled\\:text-gray-400:disabled { color: var(--text-faint); }
+        .bg-transparent { background-color: transparent; }
+        .placeholder\\:text-gray-400::placeholder { color: var(--text-muted); }
+        .min-h-\\[20px\\] { min-height: 20px; }
+      `;
+    } else if (theme === 'discord') {
+      themeStyles = `
+        .ai-chat-container-discord {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          background: var(--background-primary);
+          font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        
+        .ai-chat-messages-discord {
+          flex: 1;
+          overflow-y: auto;
+          padding: 16px;
+          space-y: 8px;
+          background: var(--background-primary);
+        }
+        
+        .ai-chat-messages-discord > * + * {
+          margin-top: 8px;
+        }
+        
+        /* Discord theme utilities */
+        .bg-gray-50 { background-color: var(--background-secondary); }
+        .bg-gray-800 { background-color: var(--background-secondary); }
+        .bg-white { background-color: var(--background-primary); }
+        .bg-gray-700 { background-color: var(--background-secondary); }
+        .border-gray-300 { border-color: var(--background-modifier-border); }
+        .border-gray-600 { border-color: var(--background-modifier-border); }
+        .w-px { width: 1px; }
+        .h-6 { height: 1.5rem; }
+        .bg-gray-300 { background-color: var(--background-modifier-border); }
+        .bg-gray-600 { background-color: var(--background-modifier-border); }
+        .text-gray-600 { color: var(--text-muted); }
+        .text-gray-400 { color: var(--text-muted); }
+        .text-gray-500 { color: var(--text-muted); }
+        .hover\\:text-gray-700:hover { color: var(--text-normal); }
+        .hover\\:text-gray-300:hover { color: var(--text-muted); }
+        .hover\\:bg-gray-200:hover { background-color: var(--background-modifier-hover); }
+        .hover\\:bg-gray-700:hover { background-color: var(--background-modifier-hover); }
+        .bg-blue-500 { background-color: var(--interactive-accent); }
+        .hover\\:bg-blue-600:hover { background-color: var(--interactive-accent-hover); }
+        .disabled\\:bg-gray-400:disabled { background-color: var(--text-faint); }
+        .disabled\\:cursor-not-allowed:disabled { cursor: not-allowed; }
+        .placeholder\\:text-gray-500::placeholder { color: var(--text-muted); }
+        .placeholder\\:text-gray-400::placeholder { color: var(--text-muted); }
+        .p-4 { padding: 1rem; }
+        .p-2 { padding: 0.5rem; }
+        .rounded-md { border-radius: 0.375rem; }
+        .flex-shrink-0 { flex-shrink: 0; }
+        .bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)); }
+        .from-blue-500 { --tw-gradient-from: var(--interactive-accent); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(var(--interactive-accent-rgb), 0)); }
+        .to-purple-600 { --tw-gradient-to: #9333ea; }
+        .items-baseline { align-items: baseline; }
+        .flex-1 { flex: 1; }
+      `;
+    }
+
+    if (themeStyles) {
+      this.addStyleElement('ai-theme-styles', themeStyles);
+    }
+  }
+
+  /**
+   * Add Tailwind-like utility classes for themed components
+   */
+  private addTailwindUtilities(): void {
+    const styleId = 'ai-tailwind-utilities';
+    const styles = `
+      /* Layout utilities */
+      .flex { display: flex; }
+      .flex-col { flex-direction: column; }
+      .items-end { align-items: flex-end; }
+      .items-start { align-items: flex-start; }
+      .items-center { align-items: center; }
+      .items-baseline { align-items: baseline; }
+      .justify-between { justify-content: space-between; }
+      .justify-center { justify-content: center; }
+      .flex-1 { flex: 1; }
+      .flex-shrink-0 { flex-shrink: 0; }
+      
+      /* Spacing utilities */
+      .gap-1 { gap: 0.25rem; }
+      .gap-2 { gap: 0.5rem; }
+      .gap-3 { gap: 0.75rem; }
+      .p-1\\.5 { padding: 0.375rem; }
+      .p-2 { padding: 0.5rem; }
+      .p-3 { padding: 0.75rem; }
+      .p-4 { padding: 1rem; }
+      .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+      .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+      .px-4 { padding-left: 1rem; padding-right: 1rem; }
+      .py-2\\.5 { padding-top: 0.625rem; padding-bottom: 0.625rem; }
+      .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+      .pr-12 { padding-right: 3rem; }
+      .mt-1 { margin-top: 0.25rem; }
+      .mb-4 { margin-bottom: 1rem; }
+      
+      /* Sizing utilities */
+      .max-w-\\[80\\%\\] { max-width: 80%; }
+      .h-10 { height: 2.5rem; }
+      .w-10 { width: 2.5rem; }
+      .h-16 { height: 4rem; }
+      .w-16 { width: 4rem; }
+      .h-full { height: 100%; }
+      .w-full { width: 100%; }
+      .w-4 { width: 1rem; }
+      .h-4 { height: 1rem; }
+      .min-h-\\[42px\\] { min-height: 42px; }
+      .max-h-32 { max-height: 8rem; }
+      
+      /* Border utilities */
+      .rounded-2xl { border-radius: 1rem; }
+      .rounded-full { border-radius: 9999px; }
+      .rounded-br-md { border-bottom-right-radius: 0.375rem; }
+      .rounded-bl-md { border-bottom-left-radius: 0.375rem; }
+      .border { border-width: 1px; }
+      .border-t { border-top-width: 1px; }
+      .border-b { border-bottom-width: 1px; }
+      .border-border { border-color: var(--background-modifier-border); }
+      
+      /* Typography utilities */
+      .text-\\[15px\\] { font-size: 15px; }
+      .text-\\[12px\\] { font-size: 12px; }
+      .text-\\[11px\\] { font-size: 11px; }
+      .text-sm { font-size: 0.875rem; }
+      .text-xs { font-size: 0.75rem; }
+      .text-2xl { font-size: 1.5rem; }
+      .leading-relaxed { line-height: 1.625; }
+      .font-semibold { font-weight: 600; }
+      .font-medium { font-weight: 500; }
+      .text-center { text-align: center; }
+      
+      /* Color utilities */
+      .text-white { color: white; }
+      .text-muted-foreground { color: var(--text-muted); }
+      .text-foreground { color: var(--text-normal); }
+      .bg-\\[\\#007AFF\\] { background-color: #007AFF; }
+      .bg-\\[\\#E9E9EB\\] { background-color: #E9E9EB; }
+      .bg-gradient-to-br { background: linear-gradient(135deg, var(--tw-gradient-from), var(--tw-gradient-to)); }
+      .from-\\[\\#007AFF\\] { --tw-gradient-from: #007AFF; }
+      .to-\\[\\#5856D6\\] { --tw-gradient-to: #5856D6; }
+      .bg-background\\/80 { background-color: rgba(var(--background-primary-rgb), 0.8); }
+      .bg-muted\\/50 { background-color: rgba(var(--background-secondary-rgb), 0.5); }
+      
+      /* Position utilities */
+      .absolute { position: absolute; }
+      .relative { position: relative; }
+      .right-2 { right: 0.5rem; }
+      .bottom-1\\.5 { bottom: 0.375rem; }
+      
+      /* Other utilities */
+      .backdrop-blur-xl { backdrop-filter: blur(24px); }
+      .resize-none { resize: none; }
+      .transition-all { transition-property: all; }
+      .duration-200 { transition-duration: 200ms; }
+      
+      /* Focus utilities */
+      .focus\\:outline-none:focus { outline: none; }
+      .focus\\:ring-2:focus { box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.3); }
+      .focus\\:ring-\\[\\#007AFF\\]\\/50:focus { box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.5); }
+      .focus\\:border-\\[\\#007AFF\\]:focus { border-color: #007AFF; }
+      
+      /* Hover utilities */
+      .hover\\:bg-\\[\\#0066CC\\]:hover { background-color: #0066CC; }
+      .hover\\:text-\\[\\#0066CC\\]:hover { color: #0066CC; }
+      .hover\\:bg-gray-100:hover { background-color: rgba(var(--background-modifier-hover-rgb), 1); }
+      .hover\\:bg-gray-700:hover { background-color: rgba(var(--background-modifier-hover-rgb), 1); }
+      
+      /* Dark theme overrides */
+      .dark .dark\\:bg-\\[\\#3A3A3C\\] { background-color: #3A3A3C; }
+      .dark .dark\\:text-white { color: white; }
+      .dark .dark\\:hover\\:bg-gray-700:hover { background-color: rgba(55, 65, 81, 1); }
+      
+      /* Placeholder utilities */
+      .placeholder\\:text-muted-foreground::placeholder { color: var(--text-muted); }
+    `;
+    
+    this.addStyleElement(styleId, styles);
   }
 
   /**
