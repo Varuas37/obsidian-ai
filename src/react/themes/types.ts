@@ -7,11 +7,30 @@ export interface ChatBubbleProps {
   timestamp?: string;
 }
 
+// Extensible button system for headers
+export interface HeaderButton {
+  id: string;
+  label: string;
+  icon?: string;
+  onClick: () => void;
+  variant?: 'primary' | 'secondary' | 'danger';
+  disabled?: boolean;
+  tooltip?: string;
+}
+
+// Context information for header
+export interface ContextInfo {
+  currentWords: number;
+  maxWords: number;
+  percentage: number;
+}
+
 export interface ChatHeaderProps {
   name: string;
   avatar?: string;
   status?: string;
-  onClear?: () => void;
+  buttons?: HeaderButton[];
+  contextInfo?: ContextInfo;
 }
 
 export interface ChatInputProps {

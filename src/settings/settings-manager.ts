@@ -24,6 +24,11 @@ export interface PluginSettings {
   ollamaModel: string;
   apiBaseUrl: string;
   maxTokens: number;
+  // Context and conversation settings
+  contextWindowSize: number; // Maximum words to keep in context
+  enableContextTracking: boolean;
+  maxConversationHistory: number; // Maximum number of messages to keep in history
+  autoSaveConversations: boolean;
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -46,7 +51,12 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   openrouterModel: "openai/gpt-4o-mini",
   ollamaModel: "llama3.1",
   apiBaseUrl: "",
-  maxTokens: 4000
+  maxTokens: 4000,
+  // Context and conversation defaults
+  contextWindowSize: 100000, // 100K words max context
+  enableContextTracking: true,
+  maxConversationHistory: 50, // Keep last 50 messages
+  autoSaveConversations: true
 };
 
 export class SettingsManager {
@@ -107,6 +117,24 @@ export class SettingsManager {
     // Validate maxTokens
     if (typeof this.settings.maxTokens !== 'number' || this.settings.maxTokens < 1) {
       this.settings.maxTokens = DEFAULT_SETTINGS.maxTokens;
+    }
+
+    // Validate context window size
+    if (typeof this.settings.contextWindowSize !== 'number' || this.settings.contextWindowSize < 1000) {
+      this.settings.contextWindowSize = DEFAULT_SETTINGS.contextWindowSize;
+    }
+
+    // Validate max conversation history
+    if (typeof this.settings.maxConversationHistory !== 'number' || this.settings.maxConversationHistory < 1) {
+      this.settings.maxConversationHistory = DEFAULT_SETTINGS.maxConversationHistory;
+    }
+
+    // Validate boolean settings
+    if (typeof this.settings.enableContextTracking !== 'boolean') {
+      this.settings.enableContextTracking = DEFAULT_SETTINGS.enableContextTracking;
+    }
+    if (typeof this.settings.autoSaveConversations !== 'boolean') {
+      this.settings.autoSaveConversations = DEFAULT_SETTINGS.autoSaveConversations;
     }
 
     // Validate chat panel side

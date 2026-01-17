@@ -1094,7 +1094,7 @@ var require_react_development = __commonJS({
           }
           return dispatcher.useContext(Context);
         }
-        function useState3(initialState) {
+        function useState6(initialState) {
           var dispatcher = resolveDispatcher();
           return dispatcher.useState(initialState);
         }
@@ -1897,7 +1897,7 @@ var require_react_development = __commonJS({
         exports.useMemo = useMemo;
         exports.useReducer = useReducer;
         exports.useRef = useRef2;
-        exports.useState = useState3;
+        exports.useState = useState6;
         exports.useSyncExternalStore = useSyncExternalStore;
         exports.useTransition = useTransition;
         exports.version = ReactVersion;
@@ -2393,9 +2393,9 @@ var require_react_dom_development = __commonJS({
         if (typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ !== "undefined" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart === "function") {
           __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(new Error());
         }
-        var React5 = require_react();
+        var React8 = require_react();
         var Scheduler = require_scheduler();
-        var ReactSharedInternals = React5.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+        var ReactSharedInternals = React8.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
         var suppressWarning = false;
         function setSuppressWarning(newSuppressWarning) {
           {
@@ -4000,7 +4000,7 @@ var require_react_dom_development = __commonJS({
           {
             if (props.value == null) {
               if (typeof props.children === "object" && props.children !== null) {
-                React5.Children.forEach(props.children, function(child) {
+                React8.Children.forEach(props.children, function(child) {
                   if (child == null) {
                     return;
                   }
@@ -23569,7 +23569,7 @@ var require_react_jsx_runtime_development = __commonJS({
     if (true) {
       (function() {
         "use strict";
-        var React5 = require_react();
+        var React8 = require_react();
         var REACT_ELEMENT_TYPE = Symbol.for("react.element");
         var REACT_PORTAL_TYPE = Symbol.for("react.portal");
         var REACT_FRAGMENT_TYPE = Symbol.for("react.fragment");
@@ -23595,7 +23595,7 @@ var require_react_jsx_runtime_development = __commonJS({
           }
           return null;
         }
-        var ReactSharedInternals = React5.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+        var ReactSharedInternals = React8.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
         function error(format) {
           {
             {
@@ -24445,11 +24445,11 @@ var require_react_jsx_runtime_development = __commonJS({
             return jsxWithValidation(type, props, key, false);
           }
         }
-        var jsx7 = jsxWithValidationDynamic;
-        var jsxs5 = jsxWithValidationStatic;
+        var jsx16 = jsxWithValidationDynamic;
+        var jsxs14 = jsxWithValidationStatic;
         exports.Fragment = REACT_FRAGMENT_TYPE;
-        exports.jsx = jsx7;
-        exports.jsxs = jsxs5;
+        exports.jsx = jsx16;
+        exports.jsxs = jsxs14;
       })();
     }
   }
@@ -24496,7 +24496,14 @@ var DEFAULT_SETTINGS = {
   openrouterModel: "openai/gpt-4o-mini",
   ollamaModel: "llama3.1",
   apiBaseUrl: "",
-  maxTokens: 4e3
+  maxTokens: 4e3,
+  // Context and conversation defaults
+  contextWindowSize: 1e5,
+  // 100K words max context
+  enableContextTracking: true,
+  maxConversationHistory: 50,
+  // Keep last 50 messages
+  autoSaveConversations: true
 };
 var SettingsManager = class {
   constructor(plugin) {
@@ -24544,6 +24551,18 @@ var SettingsManager = class {
   validateSettings() {
     if (typeof this.settings.maxTokens !== "number" || this.settings.maxTokens < 1) {
       this.settings.maxTokens = DEFAULT_SETTINGS.maxTokens;
+    }
+    if (typeof this.settings.contextWindowSize !== "number" || this.settings.contextWindowSize < 1e3) {
+      this.settings.contextWindowSize = DEFAULT_SETTINGS.contextWindowSize;
+    }
+    if (typeof this.settings.maxConversationHistory !== "number" || this.settings.maxConversationHistory < 1) {
+      this.settings.maxConversationHistory = DEFAULT_SETTINGS.maxConversationHistory;
+    }
+    if (typeof this.settings.enableContextTracking !== "boolean") {
+      this.settings.enableContextTracking = DEFAULT_SETTINGS.enableContextTracking;
+    }
+    if (typeof this.settings.autoSaveConversations !== "boolean") {
+      this.settings.autoSaveConversations = DEFAULT_SETTINGS.autoSaveConversations;
     }
     if (!["left", "right"].includes(this.settings.chatPanelSide)) {
       this.settings.chatPanelSide = DEFAULT_SETTINGS.chatPanelSide;
@@ -27243,7 +27262,7 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
 };
 
 // src/ui/react-chat-view.tsx
-var import_react4 = __toESM(require_react());
+var import_react7 = __toESM(require_react());
 var import_obsidian4 = require("obsidian");
 var import_client = __toESM(require_client());
 
@@ -27253,6 +27272,13 @@ var import_jsx_runtime = __toESM(require_jsx_runtime());
 var AppContext = (0, import_react.createContext)(void 0);
 var AIServiceContext = (0, import_react.createContext)(void 0);
 var SettingsContext = (0, import_react.createContext)(void 0);
+var useApp = () => {
+  const app = (0, import_react.useContext)(AppContext);
+  if (!app) {
+    throw new Error("useApp must be used within an AppContext.Provider");
+  }
+  return app;
+};
 var useAIService = () => {
   const aiService = (0, import_react.useContext)(AIServiceContext);
   if (!aiService) {
@@ -27277,7 +27303,402 @@ var ContextProviders = ({
 };
 
 // src/react/ChatInterface.tsx
+var import_react6 = __toESM(require_react());
+
+// src/react/themes/default/Bubble.tsx
+var import_jsx_runtime2 = __toESM(require_jsx_runtime());
+function DefaultBubble({ message, isUser, timestamp }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: `ai-chat-message ai-chat-message-${isUser ? "user" : "assistant"}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ai-chat-message-label", children: isUser ? "You" : "AI Assistant" }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ai-chat-message-content", children: message }),
+    timestamp && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ai-chat-timestamp", children: timestamp })
+  ] });
+}
+
+// src/react/themes/default/Header.tsx
+var import_jsx_runtime3 = __toESM(require_jsx_runtime());
+function DefaultHeader({ name, status = "AI Assistant", buttons = [], contextInfo }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "ai-chat-header", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "ai-chat-header-main", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { className: "ai-chat-title", children: name }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ai-chat-provider-label", children: status })
+    ] }),
+    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ai-chat-context-bar", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "ai-chat-context-info", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { className: "ai-chat-context-text", children: [
+        contextInfo.currentWords.toLocaleString(),
+        "/",
+        contextInfo.maxWords.toLocaleString(),
+        " words"
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ai-chat-context-progress", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+        "div",
+        {
+          className: "ai-chat-context-fill",
+          style: {
+            width: `${Math.min(contextInfo.percentage, 100)}%`,
+            backgroundColor: contextInfo.percentage > 90 ? "#ff4444" : contextInfo.percentage > 70 ? "#ffaa44" : "#44aa44"
+          }
+        }
+      ) }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { className: "ai-chat-context-percent", children: [
+        contextInfo.percentage.toFixed(0),
+        "%"
+      ] })
+    ] }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ai-chat-header-actions", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
+      "button",
+      {
+        className: `ai-chat-action-btn ai-chat-btn-${button.variant || "secondary"}`,
+        onClick: button.onClick,
+        disabled: button.disabled,
+        title: button.tooltip || button.label,
+        children: [
+          button.icon && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "ai-chat-btn-icon", children: button.icon }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "ai-chat-btn-text", children: button.label })
+        ]
+      },
+      button.id
+    )) })
+  ] });
+}
+
+// src/react/themes/default/Input.tsx
+var import_react2 = __toESM(require_react());
+var import_jsx_runtime4 = __toESM(require_jsx_runtime());
+function DefaultInput({ onSend, placeholder = "Ask me anything...", disabled }) {
+  const [message, setMessage] = (0, import_react2.useState)("");
+  const handleSend = () => {
+    if (message.trim() && !disabled) {
+      onSend(message.trim());
+      setMessage("");
+    }
+  };
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "ai-chat-input-container", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+      "textarea",
+      {
+        className: "ai-chat-input",
+        value: message,
+        onChange: (e) => setMessage(e.target.value),
+        onKeyDown: handleKeyDown,
+        placeholder,
+        disabled
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+      "button",
+      {
+        className: "ai-chat-send-btn",
+        onClick: handleSend,
+        disabled: !message.trim() || disabled,
+        title: disabled ? "Sending message..." : "Send message (Enter)",
+        children: disabled ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "ai-chat-spinner" }) : "\u2708\uFE0F"
+      }
+    )
+  ] });
+}
+
+// src/react/themes/default/index.ts
+var defaultTheme = {
+  name: "default",
+  displayName: "Default (Obsidian)",
+  description: "Original Obsidian-native styling with professional design",
+  components: {
+    Bubble: DefaultBubble,
+    Header: DefaultHeader,
+    Input: DefaultInput
+  }
+};
+
+// src/react/themes/imessage/Bubble.tsx
+var import_jsx_runtime5 = __toESM(require_jsx_runtime());
+function cn(...classes) {
+  return classes.filter(Boolean).join(" ");
+}
+function iMessageBubble({ message, isUser, timestamp }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: cn("flex flex-col gap-1", isUser ? "items-end" : "items-start"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+      "div",
+      {
+        className: cn(
+          "max-w-[80%] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed",
+          isUser ? "bg-[#007AFF] text-white rounded-br-md" : "bg-[#E9E9EB] dark:bg-[#3A3A3C] text-black dark:text-white rounded-bl-md"
+        ),
+        children: message
+      }
+    ),
+    timestamp && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "text-[11px] text-muted-foreground px-2", children: timestamp })
+  ] });
+}
+
+// src/react/themes/imessage/Header.tsx
+var import_jsx_runtime6 = __toESM(require_jsx_runtime());
+function iMessageHeader({ name, status = "AI Assistant", buttons = [], contextInfo }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex flex-col border-b border-border bg-background/80 backdrop-blur-xl", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex items-center justify-between px-4 py-3", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "h-10 w-10 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] text-white text-sm font-medium flex items-center justify-center", children: name.slice(0, 2).toUpperCase() }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex flex-col", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "font-semibold text-[15px] text-foreground", children: name }),
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "text-[12px] text-muted-foreground", children: status })
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "flex items-center gap-1", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+        "button",
+        {
+          onClick: button.onClick,
+          disabled: button.disabled,
+          title: button.tooltip || button.label,
+          className: `text-sm font-medium px-3 py-1 rounded transition-colors ${button.variant === "primary" ? "bg-[#007AFF] text-white hover:bg-[#0066CC]" : button.variant === "danger" ? "bg-red-500 text-white hover:bg-red-600" : "text-[#007AFF] hover:text-[#0066CC] hover:bg-gray-100 dark:hover:bg-gray-700"}`,
+          children: [
+            button.icon && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "mr-1", children: button.icon }),
+            button.label
+          ]
+        },
+        button.id
+      )) })
+    ] }),
+    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "px-4 pb-3", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "flex items-center gap-2 text-[11px] text-muted-foreground", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { children: [
+        contextInfo.currentWords.toLocaleString(),
+        "/",
+        contextInfo.maxWords.toLocaleString(),
+        " words"
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "flex-1 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+        "div",
+        {
+          className: "h-full transition-all duration-500 rounded-full",
+          style: {
+            width: `${Math.min(contextInfo.percentage, 100)}%`,
+            background: contextInfo.percentage > 90 ? "linear-gradient(90deg, #ff4444, #ff6666)" : contextInfo.percentage > 70 ? "linear-gradient(90deg, #ff8800, #ffaa44)" : "linear-gradient(90deg, #007AFF, #5856D6)"
+          }
+        }
+      ) }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { children: [
+        contextInfo.percentage.toFixed(0),
+        "%"
+      ] })
+    ] }) })
+  ] });
+}
+
+// src/react/themes/imessage/Input.tsx
 var import_react3 = __toESM(require_react());
+var import_jsx_runtime7 = __toESM(require_jsx_runtime());
+function cn2(...classes) {
+  return classes.filter(Boolean).join(" ");
+}
+function MessageInput({ onSend, placeholder = "Message", disabled }) {
+  const [message, setMessage] = (0, import_react3.useState)("");
+  const handleSend = () => {
+    if (message.trim() && !disabled) {
+      onSend(message.trim());
+      setMessage("");
+    }
+  };
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "flex items-end gap-3 p-4 border-t border-border bg-background/80 backdrop-blur-xl", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "relative flex-1 min-h-[42px]", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+      "textarea",
+      {
+        value: message,
+        onChange: (e) => setMessage(e.target.value),
+        onKeyDown: handleKeyDown,
+        placeholder,
+        disabled,
+        rows: 1,
+        className: cn2(
+          "w-full resize-none rounded-full border border-border bg-muted/50 pl-4 pr-14 py-3",
+          "text-[15px] placeholder:text-muted-foreground leading-relaxed",
+          "focus:outline-none focus:ring-2 focus:ring-[#007AFF]/50 focus:border-[#007AFF]",
+          "max-h-32 min-h-[42px]",
+          "transition-all duration-200"
+        ),
+        style: {
+          height: "auto",
+          minHeight: "42px",
+          lineHeight: "1.4"
+        },
+        onInput: (e) => {
+          const target = e.target;
+          target.style.height = "42px";
+          target.style.height = `${Math.min(target.scrollHeight, 128)}px`;
+        }
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+      "button",
+      {
+        onClick: handleSend,
+        disabled: !message.trim() || disabled,
+        className: cn2(
+          "absolute right-2 w-8 h-8 rounded-full transition-all duration-200 flex items-center justify-center",
+          message.trim() && !disabled ? "bg-[#007AFF] text-white hover:bg-[#0066CC] hover:scale-105" : "bg-gray-300 dark:bg-gray-600 text-gray-500 cursor-not-allowed"
+        ),
+        style: {
+          top: "50%",
+          transform: "translateY(-50%)"
+        },
+        children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", strokeWidth: 2, children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
+      }
+    )
+  ] }) });
+}
+
+// src/react/themes/imessage/index.ts
+var imessageTheme = {
+  name: "imessage",
+  displayName: "Message Style",
+  description: "iOS Messages-inspired interface with rounded bubbles",
+  components: {
+    Bubble: iMessageBubble,
+    Header: iMessageHeader,
+    Input: MessageInput
+  }
+};
+
+// src/react/themes/minimal/Bubble.tsx
+var import_jsx_runtime8 = __toESM(require_jsx_runtime());
+function cn3(...classes) {
+  return classes.filter(Boolean).join(" ");
+}
+function MinimalBubble({ message, isUser, timestamp }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: cn3("flex flex-col gap-1", isUser ? "items-end" : "items-start"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+      "div",
+      {
+        className: cn3(
+          "max-w-[85%] px-3 py-2 text-sm",
+          isUser ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg" : "border-l-2 border-blue-500 pl-3 text-gray-700 dark:text-gray-300"
+        ),
+        children: message
+      }
+    ),
+    timestamp && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "text-xs text-gray-500 px-1", children: timestamp })
+  ] });
+}
+
+// src/react/themes/minimal/Header.tsx
+var import_jsx_runtime9 = __toESM(require_jsx_runtime());
+function MinimalHeader({ name, status = "AI Assistant", buttons = [], contextInfo }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "flex flex-col border-b border-gray-200 dark:border-gray-700", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "flex items-center justify-between px-4 py-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "w-2 h-2 rounded-full bg-green-500" }),
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "flex flex-col", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "text-sm font-medium text-gray-700 dark:text-gray-300", children: name }),
+          status && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "text-xs text-gray-500 dark:text-gray-400", children: status })
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "flex items-center gap-1", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+        "button",
+        {
+          onClick: button.onClick,
+          disabled: button.disabled,
+          title: button.tooltip || button.label,
+          className: `px-2 py-1 text-xs rounded transition-colors ${button.variant === "primary" ? "bg-blue-500 text-white hover:bg-blue-600" : button.variant === "danger" ? "bg-red-500 text-white hover:bg-red-600" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`,
+          children: [
+            button.icon && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "mr-1", children: button.icon }),
+            button.label
+          ]
+        },
+        button.id
+      )) })
+    ] }),
+    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "px-4 pb-2", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { children: [
+        contextInfo.currentWords.toLocaleString(),
+        "/",
+        contextInfo.maxWords.toLocaleString(),
+        " words"
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "flex-1 h-1 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+        "div",
+        {
+          className: "h-full transition-all duration-300 rounded-full",
+          style: {
+            width: `${Math.min(contextInfo.percentage, 100)}%`,
+            backgroundColor: contextInfo.percentage > 90 ? "#ef4444" : contextInfo.percentage > 70 ? "#f59e0b" : "#10b981"
+          }
+        }
+      ) }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { children: [
+        contextInfo.percentage.toFixed(0),
+        "%"
+      ] })
+    ] }) })
+  ] });
+}
+
+// src/react/themes/minimal/Input.tsx
+var import_react4 = __toESM(require_react());
+var import_jsx_runtime10 = __toESM(require_jsx_runtime());
+function MinimalInput({ onSend, placeholder = "Type a message...", disabled }) {
+  const [message, setMessage] = (0, import_react4.useState)("");
+  const handleSend = () => {
+    if (message.trim() && !disabled) {
+      onSend(message.trim());
+      setMessage("");
+    }
+  };
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex items-center gap-2 p-3 border-t border-gray-200 dark:border-gray-700", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+      "textarea",
+      {
+        value: message,
+        onChange: (e) => setMessage(e.target.value),
+        onKeyDown: handleKeyDown,
+        placeholder,
+        disabled,
+        rows: 1,
+        className: "flex-1 resize-none bg-transparent text-sm placeholder:text-gray-400 focus:outline-none",
+        style: {
+          height: "auto",
+          minHeight: "20px"
+        }
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+      "button",
+      {
+        onClick: handleSend,
+        disabled: !message.trim() || disabled,
+        className: "text-blue-500 hover:text-blue-700 disabled:text-gray-400 text-sm",
+        children: "Send"
+      }
+    )
+  ] });
+}
+
+// src/react/themes/minimal/index.ts
+var minimalTheme = {
+  name: "minimal",
+  displayName: "Minimal",
+  description: "Clean, minimal design with subtle indicators",
+  components: {
+    Bubble: MinimalBubble,
+    Header: MinimalHeader,
+    Input: MinimalInput
+  }
+};
 
 // src/react/utils/AvatarGenerator.ts
 var AvatarGenerator = class {
@@ -27329,156 +27750,87 @@ AvatarGenerator.colors = [
 ];
 AvatarGenerator.avatarCache = /* @__PURE__ */ new Map();
 
-// src/react/themed-components/ChatBubble.tsx
-var import_jsx_runtime2 = __toESM(require_jsx_runtime());
-function cn(...classes) {
-  return classes.filter(Boolean).join(" ");
+// src/react/themes/discord/Bubble.tsx
+var import_jsx_runtime11 = __toESM(require_jsx_runtime());
+function DiscordBubble({ message, isUser, timestamp }) {
+  const userAvatar = AvatarGenerator.generateAvatar("user", "You");
+  const aiAvatar = AvatarGenerator.generateAvatar("ai-assistant", "AI Assistant");
+  const avatar = isUser ? userAvatar : aiAvatar;
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex gap-4 py-2 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded-md", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+      "div",
+      {
+        className: "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm",
+        style: { backgroundColor: avatar.color },
+        children: avatar.initials
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex-1 min-w-0", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex items-baseline gap-3 mb-1", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "font-semibold text-gray-900 dark:text-gray-100 text-sm", children: isUser ? "You" : "AI Assistant" }),
+        timestamp && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "text-xs text-gray-500 dark:text-gray-400 font-medium", children: timestamp })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "text-gray-800 dark:text-gray-200 text-sm leading-relaxed pr-4", children: message })
+    ] })
+  ] });
 }
-function ChatBubble({ message, isUser, timestamp, theme }) {
-  if (theme === "default") {
-    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: `ai-chat-message ai-chat-message-${isUser ? "user" : "assistant"}`, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ai-chat-message-label", children: isUser ? "You" : "AI Assistant" }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ai-chat-message-content", children: message }),
-      timestamp && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ai-chat-timestamp", children: timestamp })
-    ] });
-  }
-  if (theme === "imessage") {
-    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: cn("flex flex-col gap-1", isUser ? "items-end" : "items-start"), children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+
+// src/react/themes/discord/Header.tsx
+var import_jsx_runtime12 = __toESM(require_jsx_runtime());
+function DiscordHeader({ name, status = "AI Assistant", buttons = [], contextInfo }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex flex-col bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex items-center justify-between px-4 py-3", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "text-gray-600 dark:text-gray-400 text-lg", children: "#" }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "font-semibold text-gray-900 dark:text-gray-100", children: name }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "w-px h-6 bg-gray-300 dark:bg-gray-600" }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "text-sm text-gray-500 dark:text-gray-400", children: status })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "flex items-center gap-1", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+        "button",
+        {
+          onClick: button.onClick,
+          disabled: button.disabled,
+          title: button.tooltip || button.label,
+          className: `text-sm px-3 py-1.5 rounded transition-colors font-medium ${button.variant === "primary" ? "bg-blue-600 text-white hover:bg-blue-700" : button.variant === "danger" ? "bg-red-600 text-white hover:bg-red-700" : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"}`,
+          children: [
+            button.icon && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "mr-1", children: button.icon }),
+            button.label
+          ]
+        },
+        button.id
+      )) })
+    ] }),
+    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "px-4 pb-3", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("span", { children: [
+        contextInfo.currentWords.toLocaleString(),
+        "/",
+        contextInfo.maxWords.toLocaleString(),
+        " words"
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "flex-1 h-1.5 bg-gray-300 dark:bg-gray-600 rounded overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
         "div",
         {
-          className: cn(
-            "max-w-[80%] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed",
-            isUser ? "bg-[#007AFF] text-white rounded-br-md" : "bg-[#E9E9EB] dark:bg-[#3A3A3C] text-black dark:text-white rounded-bl-md"
-          ),
-          children: message
+          className: "h-full transition-all duration-300 rounded",
+          style: {
+            width: `${Math.min(contextInfo.percentage, 100)}%`,
+            backgroundColor: contextInfo.percentage > 90 ? "#dc2626" : contextInfo.percentage > 70 ? "#ea580c" : "#2563eb"
+          }
         }
-      ),
-      timestamp && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "text-[11px] text-muted-foreground px-2", children: timestamp })
-    ] });
-  }
-  if (theme === "minimal") {
-    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: cn("flex flex-col gap-1", isUser ? "items-end" : "items-start"), children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-        "div",
-        {
-          className: cn(
-            "max-w-[85%] px-3 py-2 text-sm",
-            isUser ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg" : "border-l-2 border-blue-500 pl-3 text-gray-700 dark:text-gray-300"
-          ),
-          children: message
-        }
-      ),
-      timestamp && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "text-xs text-gray-500 px-1", children: timestamp })
-    ] });
-  }
-  if (theme === "discord") {
-    const userAvatar = AvatarGenerator.generateAvatar("user", "You");
-    const aiAvatar = AvatarGenerator.generateAvatar("ai-assistant", "AI Assistant");
-    const avatar = isUser ? userAvatar : aiAvatar;
-    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "flex gap-4 py-2 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded-md", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-        "div",
-        {
-          className: "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm",
-          style: { backgroundColor: avatar.color },
-          children: avatar.initials
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "flex-1 min-w-0", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "flex items-baseline gap-3 mb-1", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "font-semibold text-gray-900 dark:text-gray-100 text-sm", children: isUser ? "You" : "AI Assistant" }),
-          timestamp && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "text-xs text-gray-500 dark:text-gray-400 font-medium", children: timestamp })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "text-gray-800 dark:text-gray-200 text-sm leading-relaxed pr-4", children: message })
+      ) }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("span", { children: [
+        contextInfo.percentage.toFixed(0),
+        "%"
       ] })
-    ] });
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: `ai-chat-message ai-chat-message-${isUser ? "user" : "assistant"}`, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "ai-chat-message-content", children: message }) });
+    ] }) })
+  ] });
 }
 
-// src/react/themed-components/ChatHeader.tsx
-var import_jsx_runtime3 = __toESM(require_jsx_runtime());
-function ChatHeader({ name, avatar, status = "AI Assistant", onClear, theme }) {
-  if (theme === "default") {
-    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "ai-chat-header", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { className: "ai-chat-title", children: name }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ai-chat-provider-label", children: status }),
-      onClear && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-        "button",
-        {
-          className: "ai-chat-clear-btn",
-          onClick: onClear,
-          title: "Clear chat history",
-          children: "Clear"
-        }
-      )
-    ] });
-  }
-  if (theme === "imessage") {
-    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "flex items-center justify-between px-4 py-3 border-b border-border bg-background/80 backdrop-blur-xl", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "h-10 w-10 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] text-white text-sm font-medium flex items-center justify-center", children: name.slice(0, 2).toUpperCase() }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "flex flex-col", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "font-semibold text-[15px] text-foreground", children: name }),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "text-[12px] text-muted-foreground", children: status })
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "flex items-center gap-1", children: onClear && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-        "button",
-        {
-          onClick: onClear,
-          className: "text-[#007AFF] hover:text-[#0066CC] text-sm font-medium px-3 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors",
-          children: "Clear"
-        }
-      ) })
-    ] });
-  }
-  if (theme === "minimal") {
-    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "w-2 h-2 rounded-full bg-green-500" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "text-sm font-medium text-gray-700 dark:text-gray-300", children: name })
-      ] }),
-      onClear && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-        "button",
-        {
-          onClick: onClear,
-          className: "text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300",
-          children: "Clear"
-        }
-      )
-    ] });
-  }
-  if (theme === "discord") {
-    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "text-gray-600 dark:text-gray-400", children: "#" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "font-semibold text-gray-900 dark:text-gray-100", children: name }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "w-px h-6 bg-gray-300 dark:bg-gray-600" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "text-sm text-gray-500 dark:text-gray-400", children: status })
-      ] }),
-      onClear && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-        "button",
-        {
-          onClick: onClear,
-          className: "text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
-          children: "Clear"
-        }
-      )
-    ] });
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "ai-chat-header", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { className: "ai-chat-title", children: name }) });
-}
-
-// src/react/themed-components/ChatInput.tsx
-var import_react2 = __toESM(require_react());
-var import_jsx_runtime4 = __toESM(require_jsx_runtime());
-function cn2(...classes) {
-  return classes.filter(Boolean).join(" ");
-}
-function ChatInput({ onSend, placeholder = "Ask me anything...", disabled, theme }) {
-  const [message, setMessage] = (0, import_react2.useState)("");
+// src/react/themes/discord/Input.tsx
+var import_react5 = __toESM(require_react());
+var import_jsx_runtime13 = __toESM(require_jsx_runtime());
+function DiscordInput({ onSend, placeholder = "Message #ai-assistant", disabled }) {
+  const [message, setMessage] = (0, import_react5.useState)("");
   const handleSend = () => {
     if (message.trim() && !disabled) {
       onSend(message.trim());
@@ -27491,180 +27843,329 @@ function ChatInput({ onSend, placeholder = "Ask me anything...", disabled, theme
       handleSend();
     }
   };
-  if (theme === "default") {
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "ai-chat-input-container", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-        "textarea",
-        {
-          className: "ai-chat-input",
-          value: message,
-          onChange: (e) => setMessage(e.target.value),
-          onKeyDown: handleKeyDown,
-          placeholder,
-          disabled
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-        "button",
-        {
-          className: "ai-chat-send-btn",
-          onClick: handleSend,
-          disabled: !message.trim() || disabled,
-          title: disabled ? "Sending message..." : "Send message (Enter)",
-          children: disabled ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "ai-chat-spinner" }) : "\u2708\uFE0F"
-        }
-      )
-    ] });
-  }
-  if (theme === "imessage") {
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "flex items-end gap-3 p-4 border-t border-border bg-background/80 backdrop-blur-xl", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "relative flex-1 min-h-[42px]", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-        "textarea",
-        {
-          value: message,
-          onChange: (e) => setMessage(e.target.value),
-          onKeyDown: handleKeyDown,
-          placeholder,
-          disabled,
-          rows: 1,
-          className: cn2(
-            "w-full resize-none rounded-full border border-border bg-muted/50 pl-4 pr-14 py-3",
-            "text-[15px] placeholder:text-muted-foreground leading-relaxed",
-            "focus:outline-none focus:ring-2 focus:ring-[#007AFF]/50 focus:border-[#007AFF]",
-            "max-h-32 min-h-[42px]",
-            "transition-all duration-200"
-          ),
-          style: {
-            height: "auto",
-            minHeight: "42px",
-            lineHeight: "1.4"
-          },
-          onInput: (e) => {
-            const target = e.target;
-            target.style.height = "42px";
-            target.style.height = `${Math.min(target.scrollHeight, 128)}px`;
-          }
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-        "button",
-        {
-          onClick: handleSend,
-          disabled: !message.trim() || disabled,
-          className: cn2(
-            "absolute right-2 w-8 h-8 rounded-full transition-all duration-200 flex items-center justify-center",
-            message.trim() && !disabled ? "bg-[#007AFF] text-white hover:bg-[#0066CC] hover:scale-105" : "bg-gray-300 dark:bg-gray-600 text-gray-500 cursor-not-allowed"
-          ),
-          style: {
-            top: "50%",
-            transform: "translateY(-50%)"
-          },
-          children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", strokeWidth: 2, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
-        }
-      )
-    ] }) });
-  }
-  if (theme === "minimal") {
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "flex items-center gap-2 p-3 border-t border-gray-200 dark:border-gray-700", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-        "textarea",
-        {
-          value: message,
-          onChange: (e) => setMessage(e.target.value),
-          onKeyDown: handleKeyDown,
-          placeholder,
-          disabled,
-          rows: 1,
-          className: "flex-1 resize-none bg-transparent text-sm placeholder:text-gray-400 focus:outline-none",
-          style: {
-            height: "auto",
-            minHeight: "20px"
-          }
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-        "button",
-        {
-          onClick: handleSend,
-          disabled: !message.trim() || disabled,
-          className: "text-blue-500 hover:text-blue-700 disabled:text-gray-400 text-sm",
-          children: "Send"
-        }
-      )
-    ] });
-  }
-  if (theme === "discord") {
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-        "textarea",
-        {
-          value: message,
-          onChange: (e) => setMessage(e.target.value),
-          onKeyDown: handleKeyDown,
-          placeholder,
-          disabled,
-          rows: 1,
-          className: "flex-1 resize-none bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-3 text-sm placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 dark:border-gray-600 transition-all",
-          style: {
-            height: "auto",
-            minHeight: "44px"
-          },
-          onInput: (e) => {
-            const target = e.target;
-            target.style.height = "44px";
-            target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
-          }
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-        "button",
-        {
-          onClick: handleSend,
-          disabled: !message.trim() || disabled,
-          className: "p-2.5 rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex-shrink-0",
-          children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", strokeWidth: 2, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
-        }
-      )
-    ] });
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "ai-chat-input-container", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: "flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
       "textarea",
       {
-        className: "ai-chat-input",
         value: message,
         onChange: (e) => setMessage(e.target.value),
         onKeyDown: handleKeyDown,
         placeholder,
-        disabled
+        disabled,
+        rows: 1,
+        className: "flex-1 resize-none bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-3 text-sm placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 dark:border-gray-600 transition-all",
+        style: {
+          height: "auto",
+          minHeight: "44px"
+        },
+        onInput: (e) => {
+          const target = e.target;
+          target.style.height = "44px";
+          target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
+        }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
       "button",
       {
-        className: "ai-chat-send-btn",
         onClick: handleSend,
         disabled: !message.trim() || disabled,
-        children: "\u2708\uFE0F"
+        className: "p-2.5 rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex-shrink-0",
+        children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", strokeWidth: 2, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
       }
     )
   ] });
 }
 
+// src/react/themes/discord/index.ts
+var discordTheme = {
+  name: "discord",
+  displayName: "Discord Style",
+  description: "Chat application-style with avatars and modern layout",
+  components: {
+    Bubble: DiscordBubble,
+    Header: DiscordHeader,
+    Input: DiscordInput
+  }
+};
+
+// src/react/themes/ThemeProvider.ts
+var ThemeProvider = class {
+  constructor() {
+    this.themes = {
+      default: defaultTheme,
+      imessage: imessageTheme,
+      minimal: minimalTheme,
+      discord: discordTheme
+    };
+  }
+  /**
+   * Singleton pattern for theme management
+   */
+  static getInstance() {
+    if (!ThemeProvider.instance) {
+      ThemeProvider.instance = new ThemeProvider();
+    }
+    return ThemeProvider.instance;
+  }
+  /**
+   * Get theme configuration by name
+   */
+  getTheme(themeName) {
+    const theme = this.themes[themeName];
+    if (!theme) {
+      console.warn(`Theme '${themeName}' not found, falling back to default`);
+      return this.themes.default;
+    }
+    return theme;
+  }
+  /**
+   * Get all available themes
+   */
+  getAvailableThemes() {
+    return Object.entries(this.themes).map(([name, config]) => ({
+      name,
+      displayName: config.displayName,
+      description: config.description
+    }));
+  }
+  /**
+   * Register a new theme (Open/Closed Principle - open for extension)
+   */
+  registerTheme(name, theme) {
+    this.themes[name] = theme;
+  }
+  /**
+   * Check if theme exists
+   */
+  hasTheme(themeName) {
+    return !!this.themes[themeName];
+  }
+  /**
+   * Get theme components for direct use
+   */
+  getComponents(themeName) {
+    const theme = this.getTheme(themeName);
+    return theme.components;
+  }
+};
+
+// src/core/conversation-manager.ts
+var ConversationManager = class {
+  constructor(app) {
+    this.conversationsPath = "ai-assistant-conversations.json";
+    this.app = app;
+    console.log("=== CONVERSATION MANAGER: Initialized ===");
+  }
+  static getInstance(app) {
+    if (!ConversationManager.instance && app) {
+      ConversationManager.instance = new ConversationManager(app);
+    }
+    return ConversationManager.instance;
+  }
+  /**
+   * Generate a unique conversation ID
+   */
+  generateConversationId() {
+    return `conv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+  /**
+   * Calculate word count for a conversation
+   */
+  calculateWordCount(messages) {
+    return messages.reduce((total, message) => {
+      return total + message.content.trim().split(/\s+/).length;
+    }, 0);
+  }
+  /**
+   * Generate a conversation name from first few messages
+   */
+  generateConversationName(messages) {
+    if (messages.length === 0)
+      return "Empty Conversation";
+    const firstUserMessage = messages.find((m) => m.type === "user");
+    if (firstUserMessage) {
+      const words = firstUserMessage.content.trim().split(/\s+/);
+      const truncated = words.slice(0, 6).join(" ");
+      return truncated.length < firstUserMessage.content.length ? truncated + "..." : truncated;
+    }
+    return `Conversation ${new Date().toLocaleDateString()}`;
+  }
+  /**
+   * Load all conversations from storage
+   */
+  async loadConversations() {
+    try {
+      console.log("=== CONVERSATION MANAGER: Loading conversations ===");
+      const data = await this.app.vault.adapter.read(this.conversationsPath);
+      const conversations = JSON.parse(data);
+      console.log(`=== CONVERSATION MANAGER: Loaded ${conversations.length} conversations ===`);
+      return conversations;
+    } catch (error) {
+      console.log("=== CONVERSATION MANAGER: No existing conversations file, returning empty array ===");
+      return [];
+    }
+  }
+  /**
+   * Save conversations to storage
+   */
+  async saveConversations(conversations) {
+    try {
+      console.log(`=== CONVERSATION MANAGER: Saving ${conversations.length} conversations ===`);
+      const data = JSON.stringify(conversations, null, 2);
+      await this.app.vault.adapter.write(this.conversationsPath, data);
+      console.log("=== CONVERSATION MANAGER: Conversations saved successfully ===");
+    } catch (error) {
+      console.error("=== CONVERSATION MANAGER: Error saving conversations:", error);
+      throw new Error(`Failed to save conversations: ${error}`);
+    }
+  }
+  /**
+   * Save current conversation
+   */
+  async saveConversation(messages, existingId) {
+    try {
+      const conversations = await this.loadConversations();
+      const now = Date.now();
+      const wordCount = this.calculateWordCount(messages);
+      const conversationName = this.generateConversationName(messages);
+      if (existingId) {
+        const existingIndex = conversations.findIndex((c) => c.id === existingId);
+        if (existingIndex !== -1) {
+          conversations[existingIndex] = {
+            ...conversations[existingIndex],
+            messages,
+            name: conversationName,
+            updatedAt: now,
+            wordCount
+          };
+          console.log(`=== CONVERSATION MANAGER: Updated conversation ${existingId} ===`);
+        } else {
+          throw new Error(`Conversation with id ${existingId} not found`);
+        }
+      } else {
+        const newConversation = {
+          id: this.generateConversationId(),
+          name: conversationName,
+          messages,
+          createdAt: now,
+          updatedAt: now,
+          wordCount
+        };
+        conversations.push(newConversation);
+        existingId = newConversation.id;
+        console.log(`=== CONVERSATION MANAGER: Created new conversation ${existingId} ===`);
+      }
+      await this.saveConversations(conversations);
+      return existingId;
+    } catch (error) {
+      console.error("=== CONVERSATION MANAGER: Error saving conversation:", error);
+      throw error;
+    }
+  }
+  /**
+   * Load a specific conversation
+   */
+  async loadConversation(id) {
+    try {
+      const conversations = await this.loadConversations();
+      const conversation = conversations.find((c) => c.id === id);
+      console.log(`=== CONVERSATION MANAGER: ${conversation ? "Found" : "Not found"} conversation ${id} ===`);
+      return conversation || null;
+    } catch (error) {
+      console.error("=== CONVERSATION MANAGER: Error loading conversation:", error);
+      return null;
+    }
+  }
+  /**
+   * Delete a conversation
+   */
+  async deleteConversation(id) {
+    try {
+      const conversations = await this.loadConversations();
+      const filteredConversations = conversations.filter((c) => c.id !== id);
+      if (filteredConversations.length === conversations.length) {
+        throw new Error(`Conversation with id ${id} not found`);
+      }
+      await this.saveConversations(filteredConversations);
+      console.log(`=== CONVERSATION MANAGER: Deleted conversation ${id} ===`);
+    } catch (error) {
+      console.error("=== CONVERSATION MANAGER: Error deleting conversation:", error);
+      throw error;
+    }
+  }
+  /**
+   * Get conversation metadata (for history listing)
+   */
+  async getConversationMetadata() {
+    try {
+      const conversations = await this.loadConversations();
+      return conversations.map((c) => ({
+        id: c.id,
+        name: c.name,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+        messageCount: c.messages.length,
+        wordCount: c.wordCount
+      })).sort((a, b) => b.updatedAt - a.updatedAt);
+    } catch (error) {
+      console.error("=== CONVERSATION MANAGER: Error getting metadata:", error);
+      return [];
+    }
+  }
+  /**
+   * Clear all conversations
+   */
+  async clearAllConversations() {
+    try {
+      await this.saveConversations([]);
+      console.log("=== CONVERSATION MANAGER: Cleared all conversations ===");
+    } catch (error) {
+      console.error("=== CONVERSATION MANAGER: Error clearing conversations:", error);
+      throw error;
+    }
+  }
+};
+
 // src/react/ChatInterface.tsx
-var import_jsx_runtime5 = __toESM(require_jsx_runtime());
+var import_jsx_runtime14 = __toESM(require_jsx_runtime());
 var ChatInterface = () => {
-  const [messages, setMessages] = (0, import_react3.useState)([]);
-  const [isProcessing, setIsProcessing] = (0, import_react3.useState)(false);
-  const [currentTheme, setCurrentTheme] = (0, import_react3.useState)("default");
-  const messagesEndRef = (0, import_react3.useRef)(null);
+  const [messages, setMessages] = (0, import_react6.useState)([]);
+  const [isProcessing, setIsProcessing] = (0, import_react6.useState)(false);
+  const [currentTheme, setCurrentTheme] = (0, import_react6.useState)("default");
+  const [currentConversationId, setCurrentConversationId] = (0, import_react6.useState)(null);
+  const [contextInfo, setContextInfo] = (0, import_react6.useState)({ currentWords: 0, maxWords: 8e3, percentage: 0 });
+  const messagesEndRef = (0, import_react6.useRef)(null);
   const aiService = useAIService();
   const settingsManager = useSettings();
-  (0, import_react3.useEffect)(() => {
+  const app = useApp();
+  const conversationManager = import_react6.default.useMemo(() => {
+    return ConversationManager.getInstance(app);
+  }, [app]);
+  (0, import_react6.useEffect)(() => {
     var _a;
     (_a = messagesEndRef.current) == null ? void 0 : _a.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-  (0, import_react3.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
+    const settings2 = settingsManager.getSettings();
+    if (settings2.enableContextTracking) {
+      const wordCount = messages.reduce((total, msg) => {
+        if (!msg.isThinking) {
+          return total + msg.content.trim().split(/\s+/).length;
+        }
+        return total;
+      }, 0);
+      const maxWords = settings2.contextWindowSize;
+      const percentage = Math.min(wordCount / maxWords * 100, 100);
+      setContextInfo({
+        currentWords: wordCount,
+        maxWords,
+        percentage
+      });
+      console.log(`=== CHAT INTERFACE: Context tracking - ${wordCount}/${maxWords} words (${percentage.toFixed(1)}%) ===`);
+    }
+  }, [messages, settingsManager]);
+  (0, import_react6.useEffect)(() => {
     const settings2 = settingsManager.getSettings();
     const newTheme = settings2.chatTheme || "default";
     console.log("=== CHAT INTERFACE: Theme change detected:", newTheme);
@@ -27675,18 +28176,18 @@ var ChatInterface = () => {
       console.log("=== CHAT INTERFACE: Theme state updated to:", newTheme);
     }
   }, [settingsManager, currentTheme]);
-  (0, import_react3.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     const settings2 = settingsManager.getSettings();
     const initialTheme = settings2.chatTheme || "default";
     console.log("=== CHAT INTERFACE: Initial theme:", initialTheme);
     console.log("=== CHAT INTERFACE: Component mounted with theme:", initialTheme);
     setCurrentTheme(initialTheme);
   }, []);
-  (0, import_react3.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     console.log("=== CHAT INTERFACE: currentTheme state changed to:", currentTheme);
     console.log("=== CHAT INTERFACE: Will use container class:", currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`);
   }, [currentTheme]);
-  (0, import_react3.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     const settings2 = settingsManager.getSettings();
     const providerName = getProviderDisplayName(settings2.aiProvider);
     setMessages([{
@@ -27696,6 +28197,12 @@ var ChatInterface = () => {
       timestamp: new Date()
     }]);
   }, [settingsManager]);
+  (0, import_react6.useEffect)(() => {
+    const settings2 = settingsManager.getSettings();
+    if (settings2.autoSaveConversations && messages.length > 1) {
+      saveCurrentConversation();
+    }
+  }, [messages, settingsManager]);
   const getProviderDisplayName = (provider) => {
     const names = {
       cli: "CLI",
@@ -27705,6 +28212,92 @@ var ChatInterface = () => {
       ollama: "Ollama (Local)"
     };
     return names[provider] || provider;
+  };
+  const convertToStoredMessages = (messages2) => {
+    return messages2.filter((msg) => !msg.isThinking && msg.id !== "welcome").map((msg) => ({
+      id: msg.id,
+      type: msg.type,
+      content: msg.content,
+      timestamp: msg.timestamp.getTime()
+    }));
+  };
+  const convertFromStoredMessages = (storedMessages) => {
+    return storedMessages.map((msg) => ({
+      id: msg.id,
+      type: msg.type,
+      content: msg.content,
+      timestamp: new Date(msg.timestamp)
+    }));
+  };
+  const saveCurrentConversation = async () => {
+    try {
+      const storedMessages = convertToStoredMessages(messages);
+      if (storedMessages.length === 0)
+        return;
+      const conversationId = await conversationManager.saveConversation(
+        storedMessages,
+        currentConversationId || void 0
+      );
+      if (!currentConversationId) {
+        setCurrentConversationId(conversationId);
+        console.log(`=== CHAT INTERFACE: New conversation saved with ID: ${conversationId} ===`);
+      }
+    } catch (error) {
+      console.error("=== CHAT INTERFACE: Error saving conversation:", error);
+    }
+  };
+  const loadConversation = async (conversationId) => {
+    try {
+      const conversation = await conversationManager.loadConversation(conversationId);
+      if (conversation) {
+        const loadedMessages = convertFromStoredMessages(conversation.messages);
+        setMessages(loadedMessages);
+        setCurrentConversationId(conversationId);
+        console.log(`=== CHAT INTERFACE: Loaded conversation ${conversationId} with ${loadedMessages.length} messages ===`);
+      }
+    } catch (error) {
+      console.error("=== CHAT INTERFACE: Error loading conversation:", error);
+    }
+  };
+  const startNewChat = async () => {
+    if (messages.length > 1 && currentConversationId) {
+      await saveCurrentConversation();
+    }
+    const settings2 = settingsManager.getSettings();
+    const providerName = getProviderDisplayName(settings2.aiProvider);
+    setMessages([{
+      id: "welcome",
+      type: "assistant",
+      content: `Hello! I'm your AI assistant powered by ${providerName}. You can ask me questions about your notes, request help with tasks, or just chat. I have access to your vault context and can help with various tasks.`,
+      timestamp: new Date()
+    }]);
+    setCurrentConversationId(null);
+    console.log("=== CHAT INTERFACE: Started new chat ===");
+  };
+  const showHistory = () => {
+    console.log("=== CHAT INTERFACE: History button clicked (not implemented yet) ===");
+  };
+  const trimMessagesForContext = (messages2) => {
+    const settings2 = settingsManager.getSettings();
+    if (!settings2.enableContextTracking)
+      return messages2;
+    const maxWords = settings2.contextWindowSize;
+    let totalWords = 0;
+    const trimmedMessages = [];
+    for (let i = messages2.length - 1; i >= 0; i--) {
+      const message = messages2[i];
+      if (message.isThinking || message.id === "welcome")
+        continue;
+      const messageWords = message.content.trim().split(/\s+/).length;
+      if (totalWords + messageWords <= maxWords) {
+        trimmedMessages.unshift(message);
+        totalWords += messageWords;
+      } else {
+        console.log(`=== CHAT INTERFACE: Trimmed ${messages2.length - trimmedMessages.length} messages to fit context window ===`);
+        break;
+      }
+    }
+    return trimmedMessages;
   };
   const handleSendMessage = async (message) => {
     if (!message || isProcessing)
@@ -27729,7 +28322,7 @@ var ChatInterface = () => {
     setMessages((prev) => [...prev, thinkingMessage]);
     try {
       const startTime = Date.now();
-      const chatHistory = messages.filter((msg) => !msg.isThinking);
+      const chatHistory = trimMessagesForContext(messages.filter((msg) => !msg.isThinking));
       console.log("REACT CHAT: Sending", chatHistory.length, "history messages");
       const response = await aiService.askQuestion(message, chatHistory);
       const duration = ((Date.now() - startTime) / 1e3).toFixed(1);
@@ -27766,58 +28359,66 @@ var ChatInterface = () => {
       setIsProcessing(false);
     }
   };
-  const clearChat = () => {
-    const settings2 = settingsManager.getSettings();
-    const providerName = getProviderDisplayName(settings2.aiProvider);
-    setMessages([{
-      id: "welcome",
-      type: "assistant",
-      content: `Hello! I'm your AI assistant powered by ${providerName}. You can ask me questions about your notes, request help with tasks, or just chat. I have access to your vault context and can help with various tasks.`,
-      timestamp: new Date()
-    }]);
-  };
+  const headerButtons = [
+    {
+      id: "new-chat",
+      label: "New Chat",
+      icon: "\u2795",
+      onClick: startNewChat,
+      variant: "primary",
+      tooltip: "Start a new conversation"
+    },
+    {
+      id: "history",
+      label: "History",
+      icon: "\u{1F4DA}",
+      onClick: showHistory,
+      variant: "secondary",
+      tooltip: "View conversation history (coming soon)"
+    }
+  ];
   const settings = settingsManager.getSettings();
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-      ChatHeader,
+  const themeProvider = ThemeProvider.getInstance();
+  const themeComponents = themeProvider.getComponents(currentTheme);
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+      themeComponents.Header,
       {
         name: "AI Assistant",
         status: `Using: ${getProviderDisplayName(settings.aiProvider)}`,
-        onClear: clearChat,
-        theme: currentTheme
+        buttons: headerButtons,
+        contextInfo: settings.enableContextTracking ? contextInfo : void 0
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-messages" : `ai-chat-messages-${currentTheme}`, children: [
-      messages.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "flex flex-col items-center justify-center h-full text-center text-muted-foreground", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "w-16 h-16 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] flex items-center justify-center mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "text-2xl text-white", children: "\u{1F4AC}" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "text-sm", children: "No messages yet" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "text-xs mt-1", children: "Start the conversation!" })
-      ] }) : messages.map((message) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-        ChatBubble,
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-messages" : `ai-chat-messages-${currentTheme}`, children: [
+      messages.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "flex flex-col items-center justify-center h-full text-center text-muted-foreground", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: "w-16 h-16 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] flex items-center justify-center mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "text-2xl text-white", children: "\u{1F4AC}" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { className: "text-sm", children: "No messages yet" }),
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { className: "text-xs mt-1", children: "Start the conversation!" })
+      ] }) : messages.map((message) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+        themeComponents.Bubble,
         {
           message: message.isThinking ? "Thinking..." : message.content,
           isUser: message.type === "user",
-          timestamp: message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          theme: currentTheme
+          timestamp: message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         },
         message.id
       )),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { ref: messagesEndRef })
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { ref: messagesEndRef })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-      ChatInput,
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+      themeComponents.Input,
       {
         onSend: handleSendMessage,
         placeholder: "Ask me anything...",
-        disabled: isProcessing,
-        theme: currentTheme
+        disabled: isProcessing
       }
     )
   ] });
 };
 
 // src/ui/react-chat-view.tsx
-var import_jsx_runtime6 = __toESM(require_jsx_runtime());
+var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 var VIEW_TYPE_AI_CHAT = "ai-chat-view";
 var ReactChatView = class extends import_obsidian4.ItemView {
   constructor(leaf, aiService, settingsManager, stylesManager) {
@@ -27840,13 +28441,13 @@ var ReactChatView = class extends import_obsidian4.ItemView {
     console.log("Opening React chat view...");
     this.root = (0, import_client.createRoot)(this.contentEl);
     this.root.render(
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_react4.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_react7.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
         ContextProviders,
         {
           app: this.app,
           aiService: this.aiService,
           settingsManager: this.settingsManager,
-          children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(ChatInterface, {})
+          children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ChatInterface, {})
         }
       ) })
     );
@@ -27865,13 +28466,13 @@ var ReactChatView = class extends import_obsidian4.ItemView {
       const settings = this.settingsManager.getSettings();
       const themeKey = `chat-${settings.chatTheme}-${Date.now()}`;
       this.root.render(
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_react4.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_react7.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
           ContextProviders,
           {
             app: this.app,
             aiService: this.aiService,
             settingsManager: this.settingsManager,
-            children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(ChatInterface, {}, themeKey)
+            children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ChatInterface, {}, themeKey)
           }
         ) })
       );

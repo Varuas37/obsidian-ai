@@ -18,7 +18,8 @@ obsidian-ai-assistant/
 │   ├── main.ts                      # Plugin orchestrator (95 lines)
 │   ├── core/                        # Business logic
 │   │   ├── ai-service.ts            # AI operations orchestrator
-│   │   └── ai-providers.ts          # All provider implementations
+│   │   ├── ai-providers.ts          # All provider implementations
+│   │   └── conversation-manager.ts  # Conversation persistence & management
 │   ├── react/                       # React components
 │   │   ├── context.tsx              # React contexts & hooks
 │   │   ├── ChatInterface.tsx        # Main chat component with ThemeProvider
@@ -99,8 +100,9 @@ The plugin follows **SOLID principles** with modular design:
 | [`main.ts`](src/main.ts) | Plugin orchestration | 95 |
 | [`ai-service.ts`](src/core/ai-service.ts) | AI operations | 240 |
 | [`ai-providers.ts`](src/core/ai-providers.ts) | Provider implementations | 450 |
-| [`ChatInterface.tsx`](src/react/ChatInterface.tsx) | React chat UI | 230 |
-| [`settings-manager.ts`](src/settings/settings-manager.ts) | Configuration | 180 |
+| [`conversation-manager.ts`](src/core/conversation-manager.ts) | Conversation persistence | 180 |
+| [`ChatInterface.tsx`](src/react/ChatInterface.tsx) | React chat UI with context tracking | 280 |
+| [`settings-manager.ts`](src/settings/settings-manager.ts) | Configuration & validation | 220 |
 | [`file-handler.ts`](src/files/file-handler.ts) | File operations | 200 |
 | [`command-handler.ts`](src/commands/command-handler.ts) | Commands | 280 |
 | [`styles-manager.ts`](src/ui/styles-manager.ts) | CSS styling | 300 |
@@ -133,7 +135,32 @@ export default class AIObsidianPlugin extends Plugin {
 - **History Support**: All providers include chat history in prompts
 - **Error Handling**: Provider-specific error messages
 
-### **4. React Components**
+### **4. Conversation Management** ([`conversation-manager.ts`](src/core/conversation-manager.ts))
+- **JSON Persistence**: Conversations stored in `ai-assistant-conversations.json`
+- **Auto-naming**: Intelligent conversation naming from first user message
+- **Metadata Tracking**: Word counts, timestamps, message counts
+- **Singleton Pattern**: Single instance across plugin lifecycle
+- **CRUD Operations**: Create, read, update, delete conversations
+
+```typescript
+interface StoredConversation {
+  id: string;
+  name: string;
+  messages: StoredMessage[];
+  createdAt: number;
+  updatedAt: number;
+  wordCount: number;
+}
+```
+
+### **5. Context Tracking System**
+- **Real-time Monitoring**: Live word count tracking in [`ChatInterface.tsx`](src/react/ChatInterface.tsx)
+- **Configurable Limits**: User-defined context window size (default: 8000 words)
+- **Visual Progress**: Color-coded progress bars in all theme headers
+- **Smart Trimming**: Automatic message trimming to fit context windows
+- **Performance Optimization**: Prevents memory issues with long conversations
+
+### **6. React Components**
 
 #### **Chat Interface** ([`ChatInterface.tsx`](src/react/ChatInterface.tsx))
 ```typescript
@@ -334,15 +361,26 @@ console.log("=== REACT CHAT: Starting message send ===");
 - ✅ TypeScript + React architecture
 - ✅ 5 AI providers with full CLI support
 - ✅ Advanced theme system (Default, iMessage, Discord, Minimal)
+- ✅ Extensible button system for theme headers
+- ✅ Real-time context tracking with word count display
+- ✅ Conversation persistence with JSON storage
+- ✅ Configurable context window size and auto-save
 - ✅ Random avatar generation system
 - ✅ 120+ utility classes with Obsidian integration
 - ✅ Beautiful, responsive chat UI with theme switching
-- ✅ Conversation history and context
+- ✅ Intelligent conversation history management
 - ✅ File triggers (`ai question??`)
 - ✅ Hotkey commands with `prompt.md`
-- ✅ Complete settings interface with theme selector
+- ✅ Complete settings interface with conversation controls
 - ✅ SOLID architecture principles
 - ✅ Professional build system
 
+### **Recent Enhancements (v2.1)**
+- 🆕 **Conversation Management**: Full conversation persistence with [`ConversationManager`](src/core/conversation-manager.ts)
+- 🆕 **Context Tracking**: Real-time word count with configurable limits and visual progress bars
+- 🆕 **Extensible UI**: Theme-agnostic button system using [`HeaderButton[]`](src/react/themes/types.ts:11) interface
+- 🆕 **Smart Context Trimming**: Automatic message trimming to fit within configured context windows
+- 🆕 **Enhanced Settings**: Added 4 new configuration options for conversation and context management
+
 ### **Ready for Production**
-The plugin is now a professional-grade TypeScript + React application with enterprise-level architecture, advanced theming system, and beautiful user experience that rivals popular messaging platforms.
+The plugin is now a professional-grade TypeScript + React application with enterprise-level architecture, advanced conversation management, real-time context tracking, and extensible theming system that provides a superior user experience.
