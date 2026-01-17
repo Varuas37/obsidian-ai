@@ -15,6 +15,7 @@ export class StylesManager {
     this.addAnimations();
     this.addResponsiveStyles();
     this.addThemeStyles();
+    this.addMarkdownStyles();
     this.addTailwindUtilities();
   }
 
@@ -596,6 +597,280 @@ export class StylesManager {
       .theme-light.is-high-contrast .ai-chat-message-content {
         border-width: 2px;
         border-color: var(--background-modifier-border-focus);
+      }
+    `;
+    
+    this.addStyleElement(styleId, styles);
+  }
+
+  /**
+   * Add markdown renderer and copy button styles
+   */
+  private addMarkdownStyles(): void {
+    const styleId = 'ai-markdown-styles';
+    const styles = `
+      /* Markdown Renderer Container */
+      .markdown-renderer-container {
+        position: relative;
+        width: 100%;
+      }
+      
+      .markdown-content {
+        width: 100%;
+        line-height: 1.6;
+      }
+      
+      /* Copy Button Styles */
+      .copy-button {
+        position: absolute !important;
+        bottom: 8px !important;
+        right: 8px !important;
+        background: rgba(var(--background-secondary-rgb), 0.9);
+        border: 1px solid var(--background-modifier-border);
+        border-radius: 4px;
+        padding: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: var(--text-muted);
+        font-size: 12px;
+        z-index: 10;
+        opacity: 0;
+        transform: translateY(2px);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      
+      .markdown-renderer-container:hover .copy-button {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      
+      .copy-button:hover {
+        background: var(--interactive-hover);
+        color: var(--text-normal);
+        border-color: var(--interactive-accent);
+        transform: scale(1.05);
+      }
+      
+      .copy-button.copied {
+        background: var(--color-green);
+        color: white;
+        border-color: var(--color-green);
+      }
+      
+      .copy-button svg {
+        display: block;
+        stroke-width: 1.5;
+      }
+      
+      /* Markdown Element Styles */
+      .markdown-h1 {
+        font-size: 1.5em;
+        font-weight: 600;
+        margin: 0.67em 0;
+        color: var(--text-normal);
+        border-bottom: 1px solid var(--background-modifier-border);
+        padding-bottom: 0.3em;
+      }
+      
+      .markdown-h2 {
+        font-size: 1.3em;
+        font-weight: 600;
+        margin: 0.75em 0 0.25em 0;
+        color: var(--text-normal);
+      }
+      
+      .markdown-h3 {
+        font-size: 1.17em;
+        font-weight: 600;
+        margin: 0.83em 0;
+        color: var(--text-normal);
+      }
+      
+      .markdown-h4 {
+        font-size: 1em;
+        font-weight: 600;
+        margin: 1.12em 0;
+        color: var(--text-normal);
+      }
+      
+      .markdown-h5 {
+        font-size: 0.83em;
+        font-weight: 600;
+        margin: 1.5em 0;
+        color: var(--text-normal);
+      }
+      
+      .markdown-h6 {
+        font-size: 0.75em;
+        font-weight: 600;
+        margin: 1.67em 0;
+        color: var(--text-normal);
+      }
+      
+      .markdown-p {
+        margin: 0.5em 0;
+        color: var(--text-normal);
+        line-height: 1.6;
+      }
+      
+      .markdown-blockquote {
+        margin: 1em 0;
+        padding: 0.5em 1em;
+        border-left: 4px solid var(--interactive-accent);
+        background: var(--background-secondary);
+        color: var(--text-muted);
+        font-style: italic;
+      }
+      
+      .markdown-ul, .markdown-ol {
+        margin: 0.5em 0;
+        padding-left: 1.5em;
+        color: var(--text-normal);
+      }
+      
+      .markdown-li {
+        margin: 0.25em 0;
+        line-height: 1.5;
+      }
+      
+      .markdown-strong {
+        font-weight: 600;
+        color: var(--text-normal);
+      }
+      
+      .markdown-em {
+        font-style: italic;
+        opacity: 0.9;
+      }
+      
+      .markdown-link {
+        color: var(--interactive-accent);
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+      
+      .markdown-link:hover {
+        color: var(--interactive-accent-hover);
+        text-decoration: underline;
+      }
+      
+      .inline-code {
+        background: var(--code-background);
+        border: 1px solid var(--background-modifier-border);
+        border-radius: 3px;
+        padding: 2px 6px;
+        font-family: var(--font-monospace);
+        font-size: 0.9em;
+        color: var(--text-accent);
+      }
+      
+      .code-block {
+        background: var(--code-background);
+        border: 1px solid var(--background-modifier-border);
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin: 8px 0;
+        overflow-x: auto;
+        position: relative;
+      }
+      
+      .code-block code {
+        font-family: var(--font-monospace);
+        font-size: 0.9em;
+        color: var(--text-normal);
+        background: transparent;
+        border: none;
+        padding: 0;
+      }
+      
+      .markdown-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1em 0;
+        font-size: 0.9em;
+      }
+      
+      .markdown-th,
+      .markdown-td {
+        border: 1px solid var(--background-modifier-border);
+        padding: 8px 12px;
+        text-align: left;
+      }
+      
+      .markdown-th {
+        background: var(--background-secondary);
+        font-weight: 600;
+        color: var(--text-normal);
+      }
+      
+      .markdown-td {
+        color: var(--text-normal);
+      }
+      
+      .markdown-thead {
+        background: var(--background-secondary);
+      }
+      
+      .markdown-tbody .markdown-tr:nth-child(even) {
+        background: rgba(var(--background-secondary-rgb), 0.5);
+      }
+      
+      /* Theme-specific markdown styles */
+      .default-theme-markdown .copy-button {
+        background: rgba(var(--background-primary-rgb), 0.95);
+      }
+      
+      .discord-theme-markdown .copy-button {
+        background: rgba(var(--background-secondary-rgb), 0.95);
+        border-radius: 3px;
+      }
+      
+      .imessage-theme-markdown .copy-button {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 8px;
+        backdrop-filter: blur(20px);
+      }
+      
+      .imessage-theme-markdown .copy-button:hover {
+        background: rgba(0, 122, 255, 0.1);
+        border-color: #007AFF;
+        color: #007AFF;
+      }
+      
+      .minimal-theme-markdown .copy-button {
+        background: transparent;
+        border: none;
+        padding: 4px;
+      }
+      
+      .minimal-theme-markdown .copy-button:hover {
+        background: var(--background-modifier-hover);
+        border-radius: 3px;
+      }
+      
+      /* Dark theme adjustments */
+      .theme-dark .copy-button {
+        background: rgba(var(--background-secondary-rgb), 0.9);
+        color: var(--text-muted);
+      }
+      
+      .theme-dark .copy-button:hover {
+        background: var(--interactive-hover);
+        color: var(--text-normal);
+      }
+      
+      /* Reduced motion support */
+      @media (prefers-reduced-motion: reduce) {
+        .copy-button {
+          transition: none;
+          opacity: 1;
+          transform: none;
+        }
+        
+        .copy-button:hover {
+          transform: none;
+        }
       }
     `;
     

@@ -1,11 +1,18 @@
 import React from 'react';
 import { ChatBubbleProps } from '../types';
+import { MarkdownRenderer } from '../../utils/MarkdownRenderer';
 
 function cn(...classes: (string | undefined | null | boolean)[]): string {
   return classes.filter(Boolean).join(' ');
 }
 
-export function MinimalBubble({ message, isUser, timestamp }: ChatBubbleProps) {
+export function MinimalBubble({
+  message,
+  isUser,
+  timestamp,
+  enableMarkdown = !isUser,
+  enableCopy = !isUser
+}: ChatBubbleProps) {
   return (
     <div className={cn("flex flex-col gap-1", isUser ? "items-end" : "items-start")}>
       <div
@@ -16,7 +23,15 @@ export function MinimalBubble({ message, isUser, timestamp }: ChatBubbleProps) {
             : "border-l-2 border-blue-500 pl-3 text-gray-700 dark:text-gray-300",
         )}
       >
-        {message}
+        {enableMarkdown ? (
+          <MarkdownRenderer
+            content={message}
+            showCopyButton={enableCopy}
+            className="minimal-theme-markdown"
+          />
+        ) : (
+          message
+        )}
       </div>
       {timestamp && <span className="text-xs text-gray-500 px-1">{timestamp}</span>}
     </div>

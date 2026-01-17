@@ -5,6 +5,8 @@ export interface ChatBubbleProps {
   message: string;
   isUser: boolean;
   timestamp?: string;
+  enableMarkdown?: boolean;
+  enableCopy?: boolean;
 }
 
 // Extensible button system for headers
