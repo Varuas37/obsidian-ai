@@ -25117,12 +25117,13 @@ var AIService = class {
    * Ask a question through the AI provider (for chat interface)
    */
   async askQuestion(question, chatHistory = []) {
+    var _a;
     console.log("=== AI Service: Processing question ===");
-    console.log("Provider:", this.settingsManager.getSettings().aiProvider);
+    const currentSettings = this.settingsManager.getSettings();
+    console.log("Provider setting:", currentSettings.aiProvider);
     console.log("Chat history length:", chatHistory.length);
-    if (!this.currentProvider) {
-      await this.refreshProvider();
-    }
+    await this.refreshProvider();
+    console.log("Current provider type:", (_a = this.currentProvider) == null ? void 0 : _a.constructor.name);
     const context = await this.gatherContext();
     const contextWithHistory = {
       ...context,
@@ -26629,14 +26630,6 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
       new import_obsidian3.Setting(containerEl).setName("Ollama Model").setDesc("Local AI model to use (must be pulled first)").addDropdown((dropdown) => dropdown.addOption("llama3.1", "Llama 3.1 (8B)").addOption("llama3.1:70b", "Llama 3.1 (70B)").addOption("llama2", "Llama 2 (7B)").addOption("codellama", "Code Llama").addOption("mistral", "Mistral 7B").addOption("phi3", "Phi-3 Mini").addOption("gemma2", "Gemma 2").setValue(settings.ollamaModel).onChange(async (value) => {
         await this.settingsManager.updateSetting("ollamaModel", value);
       }));
-      const ollamaInfo = containerEl.createEl("div", { cls: "ai-settings-info" });
-      ollamaInfo.innerHTML = `
-        <strong>Ollama Setup:</strong><br>
-        1. Install from <a href="https://ollama.ai/" target="_blank">ollama.ai</a><br>
-        2. Pull a model: <code>ollama pull llama3.1</code><br>
-        3. Start server: <code>ollama serve</code><br>
-        4. No API key needed - runs locally!
-      `;
     }
     if (["anthropic", "openai", "openrouter"].includes(settings.aiProvider)) {
       new import_obsidian3.Setting(containerEl).setName("Max Tokens").setDesc("Maximum tokens for API responses").addText((text) => text.setPlaceholder("4000").setValue(settings.maxTokens.toString()).onChange(async (value) => {
@@ -26658,13 +26651,6 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
     new import_obsidian3.Setting(containerEl).setName("Question suffix").setDesc("Suffix to trigger questions (e.g., '??' to avoid triggering on single '?')").addText((text) => text.setPlaceholder("??").setValue(settings.questionSuffix).onChange(async (value) => {
       await this.settingsManager.updateSetting("questionSuffix", value);
     }));
-    const triggerExample = containerEl.createEl("div", { cls: "ai-settings-info" });
-    triggerExample.innerHTML = `
-      <strong>How to use file triggers:</strong><br>
-      1. Type in any markdown file: <code>${settings.triggerKeyword} What should I focus on${settings.questionSuffix}</code><br>
-      2. The question will be answered automatically when you save the file<br>
-      3. Or use the hotkey command on files with a <code>prompt.md</code>
-    `;
   }
   /**
    * Add UI and interaction settings
@@ -26713,15 +26699,6 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
       <strong>Current Provider:</strong> ${this.getProviderDisplayName(settings.aiProvider)}<br>
       <strong>Status:</strong> ${isConfigured ? "\u2705 Configured" : "\u26A0\uFE0F Not Configured"}<br>
       <strong>Chat Panel:</strong> ${settings.chatPanelSide === "right" ? "Right sidebar" : "Left sidebar"}
-    `;
-    const devInfo = containerEl.createEl("details");
-    const summary = devInfo.createEl("summary", { text: "Developer Information" });
-    const content = devInfo.createEl("div", { cls: "ai-settings-info" });
-    content.innerHTML = `
-      <strong>Architecture:</strong> TypeScript + React<br>
-      <strong>Build System:</strong> esbuild + TypeScript<br>
-      <strong>Source:</strong> <code>src/</code> directory<br>
-      <strong>Commands:</strong> <code>npm run dev</code> | <code>npm run build</code>
     `;
   }
   /**

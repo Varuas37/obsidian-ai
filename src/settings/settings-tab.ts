@@ -225,15 +225,6 @@ export class AIObsidianSettingTab extends PluginSettingTab {
             await this.settingsManager.updateSetting('ollamaModel', value);
           }));
 
-      // Add helpful setup instructions for Ollama
-      const ollamaInfo = containerEl.createEl("div", { cls: "ai-settings-info" });
-      ollamaInfo.innerHTML = `
-        <strong>Ollama Setup:</strong><br>
-        1. Install from <a href="https://ollama.ai/" target="_blank">ollama.ai</a><br>
-        2. Pull a model: <code>ollama pull llama3.1</code><br>
-        3. Start server: <code>ollama serve</code><br>
-        4. No API key needed - runs locally!
-      `;
     }
 
     // Common API Settings
@@ -280,14 +271,6 @@ export class AIObsidianSettingTab extends PluginSettingTab {
           await this.settingsManager.updateSetting('questionSuffix', value);
         }));
 
-    // Add example of how to use triggers
-    const triggerExample = containerEl.createEl("div", { cls: "ai-settings-info" });
-    triggerExample.innerHTML = `
-      <strong>How to use file triggers:</strong><br>
-      1. Type in any markdown file: <code>${settings.triggerKeyword} What should I focus on${settings.questionSuffix}</code><br>
-      2. The question will be answered automatically when you save the file<br>
-      3. Or use the hotkey command on files with a <code>prompt.md</code>
-    `;
   }
 
   /**
@@ -361,16 +344,6 @@ export class AIObsidianSettingTab extends PluginSettingTab {
       <strong>Chat Panel:</strong> ${settings.chatPanelSide === 'right' ? 'Right sidebar' : 'Left sidebar'}
     `;
 
-    // Add development info
-    const devInfo = containerEl.createEl("details");
-    const summary = devInfo.createEl("summary", { text: "Developer Information" });
-    const content = devInfo.createEl("div", { cls: "ai-settings-info" });
-    content.innerHTML = `
-      <strong>Architecture:</strong> TypeScript + React<br>
-      <strong>Build System:</strong> esbuild + TypeScript<br>
-      <strong>Source:</strong> <code>src/</code> directory<br>
-      <strong>Commands:</strong> <code>npm run dev</code> | <code>npm run build</code>
-    `;
   }
 
   /**

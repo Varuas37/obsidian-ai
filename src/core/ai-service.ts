@@ -85,12 +85,14 @@ export class AIService {
    */
   async askQuestion(question: string, chatHistory: any[] = []): Promise<string> {
     console.log("=== AI Service: Processing question ===");
-    console.log("Provider:", this.settingsManager.getSettings().aiProvider);
+    const currentSettings = this.settingsManager.getSettings();
+    console.log("Provider setting:", currentSettings.aiProvider);
     console.log("Chat history length:", chatHistory.length);
     
-    if (!this.currentProvider) {
-      await this.refreshProvider();
-    }
+    // Always refresh provider to ensure we're using the correct one
+    await this.refreshProvider();
+    
+    console.log("Current provider type:", this.currentProvider?.constructor.name);
 
     const context = await this.gatherContext();
     const contextWithHistory = {
