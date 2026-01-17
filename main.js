@@ -41017,9 +41017,17 @@ var ChatInterface = () => {
       const storedMessages = convertToStoredMessages(messages);
       if (storedMessages.length === 0)
         return;
+      const currentSettings = settingsManager.getSettings();
+      console.log("=== CHAT INTERFACE: Saving conversation with settings ===", {
+        aiProvider: currentSettings.aiProvider,
+        model: currentSettings.openaiModel,
+        apiType: currentSettings.openaiApiType
+      });
       const conversationId = await conversationManager.saveConversation(
         storedMessages,
-        currentConversationId || void 0
+        currentConversationId || void 0,
+        currentSettings
+        // ✅ Pass current settings for proper config snapshot
       );
       if (!currentConversationId) {
         setCurrentConversationId(conversationId);

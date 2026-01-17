@@ -160,9 +160,18 @@ export const ChatInterface: React.FC = () => {
       const storedMessages = convertToStoredMessages(messages);
       if (storedMessages.length === 0) return;
       
+      // Pass current settings to capture proper configuration snapshot
+      const currentSettings = settingsManager.getSettings();
+      console.log("=== CHAT INTERFACE: Saving conversation with settings ===", {
+        aiProvider: currentSettings.aiProvider,
+        model: currentSettings.openaiModel,
+        apiType: currentSettings.openaiApiType
+      });
+      
       const conversationId = await conversationManager.saveConversation(
-        storedMessages, 
-        currentConversationId || undefined
+        storedMessages,
+        currentConversationId || undefined,
+        currentSettings // ✅ Pass current settings for proper config snapshot
       );
       
       if (!currentConversationId) {
