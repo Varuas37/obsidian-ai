@@ -11,7 +11,7 @@ export interface ChatBubbleProps {
 export interface HeaderButton {
   id: string;
   label: string;
-  icon?: string;
+  icon?: string | ReactElement;
   onClick: () => void;
   variant?: 'primary' | 'secondary' | 'danger';
   disabled?: boolean;

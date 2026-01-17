@@ -34,13 +34,33 @@ npm run build        # Production build & type checking
 ## 🚀 How to Add New Features
 
 ### **1. Adding New AI Providers**
+Following the new SOLID-compliant architecture, adding providers is now much simpler:
+
 ```typescript
-// Step 1: Create provider in ai-providers.ts
-export class MyNewProvider extends AIProvider {
-  async askQuestion(question: string, context: WorkspaceContext): Promise<string> {
-    return "AI response";
+// Step 1: Create provider extending BaseAIProvider in ai-providers.ts
+export class MyNewProvider extends BaseAIProvider {
+  constructor(settings: PluginSettings) {
+    super(settings, 'My New Provider');
   }
-  
+
+  // Only implement the factory methods - no duplication!
+  protected createPromptBuilder(): PromptBuilder {
+    return new StandardPromptBuilder(); // Or create custom one
+  }
+
+  protected createResponseAdapter(): ResponseAdapter {
+    return new MyNewResponseAdapter(); // Create custom adapter
+  }
+
+  protected createRequestExecutor(): RequestExecutor {
+    return new TimedRequestExecutor(this.providerName, async (prompt: string | PromptStructure) => {
+      // Your API call logic here
+      const response = await fetch(/* your API endpoint */);
+      return response.json();
+    });
+  }
+
+  // Configuration methods
   isConfigured(): boolean { return Boolean(this.settings.myNewApiKey); }
   getConfigurationHelp(): string { return "Setup instructions"; }
 }
@@ -51,6 +71,13 @@ case "mynew": return new MyNewProvider(settings);
 // Step 3: Update settings interface and defaults
 // Step 4: Add settings UI in settings-tab.ts
 ```
+
+**Benefits of New Architecture:**
+- **No Code Duplication**: Common logic is shared via [`BaseAIProvider`](src/core/ai-providers.ts:342)
+- **Single Responsibility**: Each component has one job (prompt building, request execution, response parsing, error handling)
+- **Easy Extension**: Adding new providers requires minimal boilerplate (~20 lines vs ~100+ lines before)
+- **Consistent Error Handling**: All providers use the same error handling patterns automatically
+- **Type Safety**: Full TypeScript support with proper interfaces
 
 ### **2. Adding New Chat Themes**
 Follow the extensible button system with [`HeaderButton[]`](src/react/themes/types.ts:11) interface:

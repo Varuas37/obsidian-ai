@@ -46,7 +46,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   openaiApiKey: "",
   openrouterApiKey: "",
   ollamaUrl: "http://localhost:11434",
-  anthropicModel: "claude-3-5-sonnet-20241022",
+  anthropicModel: "claude-sonnet-4-5",
   openaiModel: "gpt-4o",
   openrouterModel: "openai/gpt-4o-mini",
   ollamaModel: "llama3.1",

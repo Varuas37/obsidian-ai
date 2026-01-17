@@ -24445,10 +24445,10 @@ var require_react_jsx_runtime_development = __commonJS({
             return jsxWithValidation(type, props, key, false);
           }
         }
-        var jsx20 = jsxWithValidationDynamic;
+        var jsx21 = jsxWithValidationDynamic;
         var jsxs18 = jsxWithValidationStatic;
         exports.Fragment = REACT_FRAGMENT_TYPE;
-        exports.jsx = jsx20;
+        exports.jsx = jsx21;
         exports.jsxs = jsxs18;
       })();
     }
@@ -24473,7 +24473,7 @@ __export(main_exports, {
   default: () => AIObsidianPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian5 = require("obsidian");
+var import_obsidian6 = require("obsidian");
 
 // src/settings/settings-manager.ts
 var DEFAULT_SETTINGS = {
@@ -24491,7 +24491,7 @@ var DEFAULT_SETTINGS = {
   openaiApiKey: "",
   openrouterApiKey: "",
   ollamaUrl: "http://localhost:11434",
-  anthropicModel: "claude-3-5-sonnet-20241022",
+  anthropicModel: "claude-sonnet-4-5",
   openaiModel: "gpt-4o",
   openrouterModel: "openai/gpt-4o-mini",
   ollamaModel: "llama3.1",
@@ -24652,77 +24652,13 @@ var import_child_process = require("child_process");
 var import_fs = require("fs");
 var import_path = require("path");
 var import_os = require("os");
+var import_obsidian = require("obsidian");
 var execAsync = (0, import_util.promisify)(import_child_process.exec);
-var AIProvider = class {
-  constructor(settings) {
-    this.settings = settings;
-  }
-};
-var CLIProvider = class extends AIProvider {
-  async askQuestion(question, context) {
-    console.log("=== CLI Provider: Starting request ===");
-    console.log("CLI: Question:", question);
-    console.log("CLI: AI CLI Path:", this.settings.aiCliPath);
-    if (!this.isConfigured()) {
-      return this.getConfigurationHelp();
-    }
-    console.log("CLI: Building prompt...");
-    const prompt = this.buildPrompt(question, context);
-    console.log("CLI: Prompt length:", prompt.length);
-    const tempFile = (0, import_path.join)((0, import_os.tmpdir)(), `obsidian-ai-prompt-${Date.now()}.txt`);
-    console.log("CLI: Writing prompt to temp file:", tempFile);
-    await import_fs.promises.writeFile(tempFile, prompt, "utf8");
-    const command = `cat "${tempFile}" | ${this.settings.aiCliPath} chat --non-interactive --trust-all-tools`;
-    console.log("CLI: Executing command:", command);
-    const startTime = Date.now();
-    console.log("CLI: Starting execution at", new Date().toISOString());
-    try {
-      const timeoutMs = 6e4;
-      console.log(`CLI: Setting ${timeoutMs / 1e3}s timeout`);
-      const { stdout } = await execAsync(command, {
-        maxBuffer: 10 * 1024 * 1024,
-        timeout: timeoutMs
-      });
-      const duration = ((Date.now() - startTime) / 1e3).toFixed(1);
-      console.log(`CLI: Command completed in ${duration}s`);
-      console.log("CLI: Raw output length:", stdout.length);
-      const answer = stdout.trim().replace(/\x1b\[[0-9;]*m/g, "").replace(/\d+m> ?m/g, "").replace(/\[38;5;\d+m/g, "").replace(/\[0m/g, "").replace(/^>\s*/gm, "").trim();
-      console.log("CLI: Cleaned output length:", answer.length);
-      return answer;
-    } catch (error) {
-      const duration = ((Date.now() - startTime) / 1e3).toFixed(1);
-      console.error(`CLI: Execution failed after ${duration}s:`, error);
-      if (error.code === "ETIMEDOUT" || error.signal === "SIGTERM") {
-        throw new Error(`CLI command timed out after ${duration}s. Your AI CLI might be unresponsive or taking too long to respond.`);
-      } else if (error.code === "ENOENT") {
-        throw new Error(`CLI command not found. Please check that '${this.settings.aiCliPath}' is correct and executable.`);
-      } else {
-        throw new Error(`CLI execution failed: ${error.message}`);
-      }
-    } finally {
-      try {
-        console.log("CLI: Cleaning up temp file:", tempFile);
-        await import_fs.promises.unlink(tempFile);
-      } catch (cleanupError) {
-        console.warn("CLI: Failed to cleanup temp file:", cleanupError);
-      }
-    }
-  }
-  isConfigured() {
-    return Boolean(this.settings.aiCliPath);
-  }
-  getConfigurationHelp() {
-    return `\u26A0\uFE0F **AI CLI Not Configured**
-
-Please configure your AI CLI path in Settings:
-1. Go to **Settings \u2192 Obsidian AI Assistant \u2192 AI CLI path**
-2. Find your CLI path by running: \`which <your-cli-name>\` in terminal
-3. Paste the full path (e.g., \`/usr/local/bin/kiro-cli\`)`;
-  }
+var StandardPromptBuilder = class {
   buildPrompt(question, context) {
     let conversationHistory = "";
     if (context.chatHistory && context.chatHistory.length > 0) {
-      console.log("Including chat history:", context.chatHistory.length, "messages");
+      console.log("=== PROMPT_BUILDER: Including chat history ===", context.chatHistory.length, "messages");
       conversationHistory = "\nCONVERSATION HISTORY:\n" + context.chatHistory.filter((msg) => !msg.isThinking).slice(-10).map((msg) => `${msg.type.toUpperCase()}: ${msg.content}`).join("\n") + "\n";
     }
     return `You are an Obsidian AI Assistant helping users manage their notes and knowledge base through a chat interface.
@@ -24750,53 +24686,378 @@ ${context.contextContent}` : "No active file currently open."}
 Answer conversationally and helpfully, building on our previous conversation.`;
   }
 };
-var AnthropicProvider = class extends AIProvider {
-  async askQuestion(question, context) {
-    console.log("=== Anthropic API: Starting request ===");
-    console.log("API: Question:", question);
-    console.log("API: Model:", this.settings.anthropicModel);
-    if (!this.isConfigured()) {
-      return this.getConfigurationHelp();
+var AnthropicPromptBuilder = class {
+  buildPrompt(question, context) {
+    const systemPrompt = `You are an Obsidian AI Assistant helping users manage their notes and knowledge base through a chat interface.
+
+WORKSPACE CONTEXT:
+- Vault: ${context.vaultName}
+- Vault path: ${context.vaultPath}
+- Current folder: ${context.folderPath}
+- Current file: ${context.activeFile ? context.activeFile.path : "None"}
+- Current file size: ${context.contentLength} characters
+- Main folders: ${context.allFolders}
+
+${context.contextContent ? `CURRENT FILE CONTENT:
+${context.contextContent}` : "No active file currently open."}
+
+SAFETY RULES:
+- NEVER perform destructive actions (delete, remove, overwrite files) without explicit user confirmation
+- If user asks to delete/remove something, respond with: "I can help with that, but please confirm: Do you want me to [action]? Reply 'yes' to proceed."
+- Always be helpful and provide context-aware suggestions
+- Format responses clearly with markdown when appropriate
+
+Answer conversationally and helpfully, as if in a chat.`;
+    return {
+      system: systemPrompt,
+      user: question
+    };
+  }
+};
+var TimedRequestExecutor = class {
+  constructor(providerName, executeFn) {
+    this.providerName = providerName;
+    this.executeFn = executeFn;
+  }
+  async executeRequest(prompt) {
+    console.log(`=== ${this.providerName}: Starting request ===`);
+    if (typeof prompt === "string") {
+      console.log(`${this.providerName}: Prompt length:`, prompt.length);
+    } else {
+      console.log(`${this.providerName}: System prompt length:`, prompt.system.length);
+      console.log(`${this.providerName}: User prompt length:`, prompt.user.length);
     }
-    const prompt = this.buildPrompt(question, context);
-    console.log("API: Prompt length:", prompt.length);
     const startTime = Date.now();
-    console.log("API: Starting request at", new Date().toISOString());
+    console.log(`${this.providerName}: Starting request at`, new Date().toISOString());
     try {
-      const response = await this.makeRequest(prompt);
+      const response = await this.executeFn(prompt);
       const duration = ((Date.now() - startTime) / 1e3).toFixed(1);
-      console.log(`API: Request completed in ${duration}s`);
+      console.log(`${this.providerName}: Request completed in ${duration}s`);
       return response;
     } catch (error) {
       const duration = ((Date.now() - startTime) / 1e3).toFixed(1);
-      console.error(`API: Request failed after ${duration}s:`, error);
-      throw new Error(`Anthropic API error: ${error.message}`);
+      console.error(`${this.providerName}: Request failed after ${duration}s:`, error);
+      throw error;
     }
   }
-  async makeRequest(prompt) {
-    const body = {
-      model: this.settings.anthropicModel,
-      max_tokens: this.settings.maxTokens,
-      messages: [{
-        role: "user",
-        content: prompt
-      }]
-    };
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": this.settings.anthropicApiKey,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify(body)
-    });
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
+};
+var StandardErrorHandler = class {
+  constructor(providerName) {
+    this.providerName = providerName;
+  }
+  handleError(error, context) {
+    var _a;
+    console.error(`=== ${this.providerName}: Error Handler ===`, context, error);
+    if (error && typeof error === "object" && error.anthropicError) {
+      console.error(`=== ${this.providerName}: Processing enhanced Anthropic error ===`);
+      console.error(`Status:`, error.status);
+      console.error(`Headers:`, error.headers);
+      console.error(`JSON Response:`, error.json);
+      console.error(`Text Response:`, error.text);
+      console.error(`Original Error:`, error.originalError);
+      let anthropicErrorMessage = "";
+      if (error.json && typeof error.json === "object") {
+        console.error(`=== ${this.providerName}: Parsing Anthropic error JSON ===`);
+        if (error.json.error) {
+          const apiError = error.json.error;
+          anthropicErrorMessage = `${apiError.type || "API Error"}: ${apiError.message || "Unknown error"}`;
+          console.error(`=== ${this.providerName}: Extracted API error:`, anthropicErrorMessage);
+        } else {
+          anthropicErrorMessage = JSON.stringify(error.json);
+          console.error(`=== ${this.providerName}: Using full JSON as error:`, anthropicErrorMessage);
+        }
+      } else if (error.text && typeof error.text === "string") {
+        anthropicErrorMessage = error.text;
+        console.error(`=== ${this.providerName}: Using text response as error:`, anthropicErrorMessage);
+      } else {
+        anthropicErrorMessage = error.message || "Unknown error from Anthropic API";
+        console.error(`=== ${this.providerName}: Using fallback error message:`, anthropicErrorMessage);
+      }
+      const status = error.status;
+      switch (status) {
+        case 400:
+          return new Error(`${this.providerName} API 400 Error - Bad Request
+
+Details from Anthropic: ${anthropicErrorMessage}
+
+This usually means there's an issue with the request format, model parameters, or content.`);
+        case 401:
+          return new Error(`${this.providerName} API 401 Error - Authentication Failed
+
+Details: ${anthropicErrorMessage}
+
+Please check your API key in settings. Get a valid key from https://console.anthropic.com/`);
+        case 403:
+          return new Error(`${this.providerName} API 403 Error - Forbidden
+
+Details: ${anthropicErrorMessage}
+
+This could be due to account restrictions or policy violations.`);
+        case 429:
+          return new Error(`${this.providerName} API 429 Error - Rate Limited
+
+Details: ${anthropicErrorMessage}
+
+You've exceeded the rate limit. Please wait a moment before trying again.`);
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+          return new Error(`${this.providerName} API ${status} Error - Server Error
+
+Details: ${anthropicErrorMessage}
+
+Anthropic's servers are experiencing issues. Please try again later.`);
+        default:
+          return new Error(`${this.providerName} API ${status} Error
+
+Details: ${anthropicErrorMessage}`);
+      }
     }
-    const data = await response.json();
-    return data.content[0].text;
+    if (error && typeof error === "object" && error.status) {
+      console.error(`${this.providerName}: Standard HTTP error - Status:`, error.status);
+      console.error(`${this.providerName}: Error response:`, error.json || error.text);
+      const errorData = error.json || {};
+      const errorText = error.text || JSON.stringify(errorData);
+      switch (error.status) {
+        case 400:
+          return new Error(`${this.providerName} API 400 Error - Invalid request format. Details: ${errorText}`);
+        case 401:
+          return new Error(`${this.providerName} API 401 Error - Invalid API key. Please check your API key in settings.`);
+        case 429:
+          return new Error(`${this.providerName} API 429 Error - Rate limit exceeded. Please try again later.`);
+        default:
+          return new Error(`${this.providerName} API ${error.status} Error: ${errorText}`);
+      }
+    }
+    if ((_a = error.message) == null ? void 0 : _a.includes("Failed to fetch")) {
+      return new Error(`Network error: Unable to connect to ${this.providerName} API. Please check your internet connection and API key.`);
+    }
+    if (error.code === "ETIMEDOUT" || error.signal === "SIGTERM") {
+      return new Error(`${this.providerName} command timed out. The service might be unresponsive or taking too long to respond.`);
+    }
+    if (error.code === "ENOENT") {
+      return new Error(`${this.providerName} command not found. Please check your configuration.`);
+    }
+    return new Error(`${this.providerName} error: ${error.message || error}`);
+  }
+};
+var AnthropicResponseAdapter = class {
+  adaptResponse(rawResponse) {
+    console.log("=== ANTHROPIC_ADAPTER: Processing response ===");
+    console.log("Response structure:", rawResponse);
+    if (!rawResponse || !rawResponse.content || !rawResponse.content[0] || !rawResponse.content[0].text) {
+      console.error("Invalid Anthropic response structure:", rawResponse);
+      throw new Error("Invalid response structure from Anthropic API");
+    }
+    return rawResponse.content[0].text;
+  }
+};
+var OpenAIResponseAdapter = class {
+  adaptResponse(rawResponse) {
+    console.log("=== OPENAI_ADAPTER: Processing response ===");
+    console.log("Response structure:", rawResponse);
+    if (!rawResponse || !rawResponse.choices || !rawResponse.choices[0] || !rawResponse.choices[0].message || !rawResponse.choices[0].message.content) {
+      console.error("Invalid OpenAI response structure:", rawResponse);
+      throw new Error("Invalid response structure from OpenAI API");
+    }
+    return rawResponse.choices[0].message.content;
+  }
+};
+var OllamaResponseAdapter = class {
+  adaptResponse(rawResponse) {
+    console.log("=== OLLAMA_ADAPTER: Processing response ===");
+    console.log("Response structure:", rawResponse);
+    if (!rawResponse || !rawResponse.response) {
+      console.error("Invalid Ollama response structure:", rawResponse);
+      throw new Error("Invalid response structure from Ollama API");
+    }
+    return rawResponse.response;
+  }
+};
+var CLIResponseAdapter = class {
+  adaptResponse(rawResponse) {
+    console.log("=== CLI_ADAPTER: Processing response ===");
+    console.log("Raw output length:", rawResponse.length);
+    const cleanedOutput = rawResponse.trim().replace(/\x1b\[[0-9;]*m/g, "").replace(/\d+m> ?m/g, "").replace(/\[38;5;\d+m/g, "").replace(/\[0m/g, "").replace(/^>\s*/gm, "").trim();
+    console.log("Cleaned output length:", cleanedOutput.length);
+    return cleanedOutput;
+  }
+};
+var BaseAIProvider = class {
+  constructor(settings, providerName) {
+    this.settings = settings;
+    this.providerName = providerName;
+    this.promptBuilder = this.createPromptBuilder();
+    this.responseAdapter = this.createResponseAdapter();
+    this.errorHandler = this.createErrorHandler();
+    this.requestExecutor = this.createRequestExecutor();
+  }
+  /**
+   * Template method - defines the algorithm structure
+   * This eliminates the repeated askQuestion logic across all providers
+   */
+  async askQuestion(question, context) {
+    try {
+      if (!this.isConfigured()) {
+        return this.getConfigurationHelp();
+      }
+      const prompt = this.promptBuilder.buildPrompt(question, context);
+      const rawResponse = await this.requestExecutor.executeRequest(prompt);
+      return this.responseAdapter.adaptResponse(rawResponse);
+    } catch (error) {
+      throw this.errorHandler.handleError(error, "askQuestion");
+    }
+  }
+  createErrorHandler() {
+    return new StandardErrorHandler(this.providerName);
+  }
+};
+var CLIProvider = class extends BaseAIProvider {
+  constructor(settings) {
+    super(settings, "CLI");
+  }
+  createPromptBuilder() {
+    return new StandardPromptBuilder();
+  }
+  createResponseAdapter() {
+    return new CLIResponseAdapter();
+  }
+  createRequestExecutor() {
+    return new TimedRequestExecutor(this.providerName, async (prompt) => {
+      const tempFile = (0, import_path.join)((0, import_os.tmpdir)(), `obsidian-ai-prompt-${Date.now()}.txt`);
+      console.log("CLI: Writing prompt to temp file:", tempFile);
+      await import_fs.promises.writeFile(tempFile, prompt, "utf8");
+      const command = `cat "${tempFile}" | ${this.settings.aiCliPath} chat --non-interactive --trust-all-tools`;
+      console.log("CLI: Executing command:", command);
+      try {
+        const timeoutMs = 6e4;
+        console.log(`CLI: Setting ${timeoutMs / 1e3}s timeout`);
+        const { stdout } = await execAsync(command, {
+          maxBuffer: 10 * 1024 * 1024,
+          timeout: timeoutMs
+        });
+        return stdout;
+      } finally {
+        try {
+          console.log("CLI: Cleaning up temp file:", tempFile);
+          await import_fs.promises.unlink(tempFile);
+        } catch (cleanupError) {
+          console.warn("CLI: Failed to cleanup temp file:", cleanupError);
+        }
+      }
+    });
+  }
+  isConfigured() {
+    return Boolean(this.settings.aiCliPath);
+  }
+  getConfigurationHelp() {
+    return `\u26A0\uFE0F **AI CLI Not Configured**
+
+Please configure your AI CLI path in Settings:
+1. Go to **Settings \u2192 Obsidian AI Assistant \u2192 AI CLI path**
+2. Find your CLI path by running: \`which <your-cli-name>\` in terminal
+3. Paste the full path (e.g., \`/usr/local/bin/kiro-cli\`)`;
+  }
+};
+var AnthropicProvider = class extends BaseAIProvider {
+  constructor(settings) {
+    super(settings, "Anthropic API");
+  }
+  createPromptBuilder() {
+    return new AnthropicPromptBuilder();
+  }
+  createResponseAdapter() {
+    return new AnthropicResponseAdapter();
+  }
+  createRequestExecutor() {
+    return new TimedRequestExecutor(this.providerName, async (prompt) => {
+      var _a, _b;
+      const structuredPrompt = prompt;
+      const apiKey = (_a = this.settings.anthropicApiKey) == null ? void 0 : _a.trim();
+      if (!apiKey) {
+        throw new Error("API key is missing or empty");
+      }
+      console.log("=== API KEY DEBUG ===");
+      console.log("Key length:", apiKey.length);
+      console.log("Key starts with:", apiKey.substring(0, 15));
+      console.log("Key ends with:", apiKey.substring(apiKey.length - 5));
+      console.log("Has whitespace:", /\s/.test(apiKey));
+      console.log("Has newlines:", /[\r\n]/.test(apiKey));
+      const VALID_MODELS = [
+        "claude-sonnet-4-5",
+        // Latest Claude Sonnet 4.5 (simplified name)
+        "claude-haiku-4-5",
+        // Latest Claude Haiku 4.5 (simplified name)
+        "claude-opus-4-5",
+        // Latest Claude Opus 4.5 (simplified name)
+        "claude-sonnet-4-5-20250929",
+        // Latest Claude Sonnet 4.5 (with date)
+        "claude-haiku-4-5-20250929",
+        // Latest Claude Haiku 4.5 (with date)
+        "claude-opus-4-5-20250929",
+        // Latest Claude Opus 4.5 (with date)
+        "claude-3-5-sonnet-latest",
+        // Alias for latest 3.5 Sonnet
+        "claude-3-opus-20240229",
+        // Claude 3 Opus (if still available)
+        "claude-3-sonnet-20240229",
+        // Claude 3 Sonnet (if still available)
+        "claude-3-haiku-20240307"
+        // Claude 3 Haiku (if still available)
+      ];
+      const configuredModel = (_b = this.settings.anthropicModel) == null ? void 0 : _b.trim();
+      let model = configuredModel || "claude-sonnet-4-5";
+      if (configuredModel) {
+        if (configuredModel.includes("20241022") || configuredModel.includes("20240620")) {
+          console.warn(`\u26A0\uFE0F Model ${configuredModel} may be deprecated. Consider using claude-sonnet-4-20250514 or claude-3-5-sonnet-latest`);
+        }
+        if (!VALID_MODELS.includes(configuredModel) && !configuredModel.endsWith("-latest")) {
+          console.warn(`\u26A0\uFE0F Model ${configuredModel} may not be valid. Known working models: ${VALID_MODELS.join(", ")}`);
+        }
+      }
+      const body = {
+        model,
+        max_tokens: Number(this.settings.maxTokens) || 4096,
+        system: structuredPrompt.system,
+        messages: [{
+          role: "user",
+          content: structuredPrompt.user
+        }]
+      };
+      console.log("=== REQUEST DEBUG ===");
+      console.log("URL: https://api.anthropic.com/v1/messages");
+      console.log("Model:", body.model);
+      console.log("Max tokens:", body.max_tokens, "type:", typeof body.max_tokens);
+      const response = await (0, import_obsidian.requestUrl)({
+        url: "https://api.anthropic.com/v1/messages",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01"
+        },
+        body: JSON.stringify(body),
+        throw: false
+        // <-- KEY: Don't throw on non-2xx, let us inspect the response
+      });
+      console.log("=== RESPONSE DEBUG ===");
+      console.log("Status:", response.status);
+      console.log("Response text:", response.text);
+      console.log("Response json:", response.json);
+      if (response.status < 200 || response.status >= 300) {
+        const errorMessage = response.text || JSON.stringify(response.json) || "Unknown error";
+        console.error("=== ANTHROPIC ERROR ===");
+        console.error("Status:", response.status);
+        console.error("Body:", errorMessage);
+        const error = new Error(`Anthropic API ${response.status}: ${errorMessage}`);
+        error.status = response.status;
+        error.json = response.json;
+        error.text = response.text;
+        throw error;
+      }
+      return response.json;
+    });
   }
   isConfigured() {
     return Boolean(this.settings.anthropicApiKey);
@@ -24809,78 +25070,44 @@ Please configure your Anthropic API key in Settings:
 2. Get your API key from https://console.anthropic.com/
 3. Paste your API key in the settings`;
   }
-  buildPrompt(question, context) {
-    return `You are an Obsidian AI Assistant helping users manage their notes and knowledge base through a chat interface.
-
-WORKSPACE CONTEXT:
-- Vault: ${context.vaultName}
-- Vault path: ${context.vaultPath}
-- Current folder: ${context.folderPath}
-- Current file: ${context.activeFile ? context.activeFile.path : "None"}
-- Current file size: ${context.contentLength} characters
-- Main folders: ${context.allFolders}
-
-SAFETY RULES:
-- NEVER perform destructive actions (delete, remove, overwrite files) without explicit user confirmation
-- If user asks to delete/remove something, respond with: "I can help with that, but please confirm: Do you want me to [action]? Reply 'yes' to proceed."
-- Always be helpful and provide context-aware suggestions
-- Format responses clearly with markdown when appropriate
-
-USER QUESTION: ${question}
-
-${context.contextContent ? `CURRENT FILE CONTENT:
-${context.contextContent}` : "No active file currently open."}
-
-Answer conversationally and helpfully, as if in a chat.`;
-  }
 };
-var OpenAIProvider = class extends AIProvider {
-  async askQuestion(question, context) {
-    console.log("=== OpenAI API: Starting request ===");
-    console.log("API: Question:", question);
-    console.log("API: Model:", this.settings.openaiModel);
-    if (!this.isConfigured()) {
-      return this.getConfigurationHelp();
-    }
-    const prompt = this.buildPrompt(question, context);
-    console.log("API: Prompt length:", prompt.length);
-    const startTime = Date.now();
-    console.log("API: Starting request at", new Date().toISOString());
-    try {
-      const response = await this.makeRequest(prompt);
-      const duration = ((Date.now() - startTime) / 1e3).toFixed(1);
-      console.log(`API: Request completed in ${duration}s`);
-      return response;
-    } catch (error) {
-      const duration = ((Date.now() - startTime) / 1e3).toFixed(1);
-      console.error(`API: Request failed after ${duration}s:`, error);
-      throw new Error(`OpenAI API error: ${error.message}`);
-    }
+var OpenAIProvider = class extends BaseAIProvider {
+  constructor(settings) {
+    super(settings, "OpenAI API");
   }
-  async makeRequest(prompt) {
-    const baseUrl = this.settings.apiBaseUrl || "https://api.openai.com/v1";
-    const body = {
-      model: this.settings.openaiModel,
-      max_tokens: this.settings.maxTokens,
-      messages: [{
-        role: "user",
-        content: prompt
-      }]
-    };
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${this.settings.openaiApiKey}`
-      },
-      body: JSON.stringify(body)
+  createPromptBuilder() {
+    return new StandardPromptBuilder();
+  }
+  createResponseAdapter() {
+    return new OpenAIResponseAdapter();
+  }
+  createRequestExecutor() {
+    return new TimedRequestExecutor(this.providerName, async (prompt) => {
+      const baseUrl = this.settings.apiBaseUrl || "https://api.openai.com/v1";
+      const body = {
+        model: this.settings.openaiModel,
+        max_tokens: this.settings.maxTokens,
+        messages: [{
+          role: "user",
+          content: prompt
+        }]
+      };
+      console.log("API: Request body prepared, size:", JSON.stringify(body).length, "bytes");
+      const response = await (0, import_obsidian.requestUrl)({
+        url: `${baseUrl}/chat/completions`,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.settings.openaiApiKey}`
+        },
+        body: JSON.stringify(body)
+      });
+      console.log("API: Response received, status:", response.status);
+      if (response.status < 200 || response.status >= 300) {
+        throw response;
+      }
+      return response.json;
     });
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
-    }
-    const data = await response.json();
-    return data.choices[0].message.content;
   }
   isConfigured() {
     return Boolean(this.settings.openaiApiKey);
@@ -24893,79 +25120,45 @@ Please configure your OpenAI API key in Settings:
 2. Get your API key from https://platform.openai.com/api-keys
 3. Paste your API key in the settings`;
   }
-  buildPrompt(question, context) {
-    return `You are an Obsidian AI Assistant helping users manage their notes and knowledge base through a chat interface.
-
-WORKSPACE CONTEXT:
-- Vault: ${context.vaultName}
-- Vault path: ${context.vaultPath}
-- Current folder: ${context.folderPath}
-- Current file: ${context.activeFile ? context.activeFile.path : "None"}
-- Current file size: ${context.contentLength} characters
-- Main folders: ${context.allFolders}
-
-SAFETY RULES:
-- NEVER perform destructive actions (delete, remove, overwrite files) without explicit user confirmation
-- If user asks to delete/remove something, respond with: "I can help with that, but please confirm: Do you want me to [action]? Reply 'yes' to proceed."
-- Always be helpful and provide context-aware suggestions
-- Format responses clearly with markdown when appropriate
-
-USER QUESTION: ${question}
-
-${context.contextContent ? `CURRENT FILE CONTENT:
-${context.contextContent}` : "No active file currently open."}
-
-Answer conversationally and helpfully, as if in a chat.`;
-  }
 };
-var OpenRouterProvider = class extends AIProvider {
-  async askQuestion(question, context) {
-    console.log("=== OpenRouter API: Starting request ===");
-    console.log("API: Question:", question);
-    console.log("API: Model:", this.settings.openrouterModel);
-    if (!this.isConfigured()) {
-      return this.getConfigurationHelp();
-    }
-    const prompt = this.buildPrompt(question, context);
-    console.log("API: Prompt length:", prompt.length);
-    const startTime = Date.now();
-    console.log("API: Starting request at", new Date().toISOString());
-    try {
-      const response = await this.makeRequest(prompt);
-      const duration = ((Date.now() - startTime) / 1e3).toFixed(1);
-      console.log(`API: Request completed in ${duration}s`);
-      return response;
-    } catch (error) {
-      const duration = ((Date.now() - startTime) / 1e3).toFixed(1);
-      console.error(`API: Request failed after ${duration}s:`, error);
-      throw new Error(`OpenRouter API error: ${error.message}`);
-    }
+var OpenRouterProvider = class extends BaseAIProvider {
+  constructor(settings) {
+    super(settings, "OpenRouter API");
   }
-  async makeRequest(prompt) {
-    const body = {
-      model: this.settings.openrouterModel,
-      max_tokens: this.settings.maxTokens,
-      messages: [{
-        role: "user",
-        content: prompt
-      }]
-    };
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${this.settings.openrouterApiKey}`,
-        "HTTP-Referer": "https://obsidian.md",
-        "X-Title": "Obsidian AI Assistant"
-      },
-      body: JSON.stringify(body)
+  createPromptBuilder() {
+    return new StandardPromptBuilder();
+  }
+  createResponseAdapter() {
+    return new OpenAIResponseAdapter();
+  }
+  createRequestExecutor() {
+    return new TimedRequestExecutor(this.providerName, async (prompt) => {
+      const body = {
+        model: this.settings.openrouterModel,
+        max_tokens: this.settings.maxTokens,
+        messages: [{
+          role: "user",
+          content: prompt
+        }]
+      };
+      console.log("API: Request body prepared, size:", JSON.stringify(body).length, "bytes");
+      const response = await (0, import_obsidian.requestUrl)({
+        url: "https://openrouter.ai/api/v1/chat/completions",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.settings.openrouterApiKey}`,
+          "HTTP-Referer": "https://obsidian.md",
+          "X-Title": "Obsidian AI Assistant"
+        },
+        body: JSON.stringify(body)
+      });
+      console.log("API: Response received, status:", response.status);
+      if (response.status < 200 || response.status >= 300) {
+        throw response;
+      }
+      return response.json;
     });
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
-    }
-    const data = await response.json();
-    return data.choices[0].message.content;
   }
   isConfigured() {
     return Boolean(this.settings.openrouterApiKey);
@@ -24979,73 +25172,40 @@ Please configure your OpenRouter API key in Settings:
 3. Paste your API key in the settings
 4. Choose from 100+ AI models including GPT, Claude, Gemini, Llama, and more!`;
   }
-  buildPrompt(question, context) {
-    return `You are an Obsidian AI Assistant helping users manage their notes and knowledge base through a chat interface.
-
-WORKSPACE CONTEXT:
-- Vault: ${context.vaultName}
-- Vault path: ${context.vaultPath}
-- Current folder: ${context.folderPath}
-- Current file: ${context.activeFile ? context.activeFile.path : "None"}
-- Current file size: ${context.contentLength} characters
-- Main folders: ${context.allFolders}
-
-SAFETY RULES:
-- NEVER perform destructive actions (delete, remove, overwrite files) without explicit user confirmation
-- If user asks to delete/remove something, respond with: "I can help with that, but please confirm: Do you want me to [action]? Reply 'yes' to proceed."
-- Always be helpful and provide context-aware suggestions
-- Format responses clearly with markdown when appropriate
-
-USER QUESTION: ${question}
-
-${context.contextContent ? `CURRENT FILE CONTENT:
-${context.contextContent}` : "No active file currently open."}
-
-Answer conversationally and helpfully, as if in a chat.`;
-  }
 };
-var OllamaProvider = class extends AIProvider {
-  async askQuestion(question, context) {
-    console.log("=== Ollama: Starting request ===");
-    console.log("Ollama: Model:", this.settings.ollamaModel);
-    console.log("Ollama: URL:", this.settings.ollamaUrl);
-    if (!this.isConfigured()) {
-      return this.getConfigurationHelp();
-    }
-    const prompt = this.buildPrompt(question, context);
-    console.log("Ollama: Prompt length:", prompt.length);
-    const startTime = Date.now();
-    try {
-      const response = await this.makeRequest(prompt);
-      const duration = ((Date.now() - startTime) / 1e3).toFixed(1);
-      console.log(`Ollama: Request completed in ${duration}s`);
-      return response;
-    } catch (error) {
-      const duration = ((Date.now() - startTime) / 1e3).toFixed(1);
-      console.error(`Ollama: Request failed after ${duration}s:`, error);
-      throw new Error(`Ollama error: ${error.message}`);
-    }
+var OllamaProvider = class extends BaseAIProvider {
+  constructor(settings) {
+    super(settings, "Ollama");
   }
-  async makeRequest(prompt) {
-    const baseUrl = this.settings.ollamaUrl || "http://localhost:11434";
-    const body = {
-      model: this.settings.ollamaModel || "llama3.1",
-      prompt,
-      stream: false
-    };
-    const response = await fetch(`${baseUrl}/api/generate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
+  createPromptBuilder() {
+    return new StandardPromptBuilder();
+  }
+  createResponseAdapter() {
+    return new OllamaResponseAdapter();
+  }
+  createRequestExecutor() {
+    return new TimedRequestExecutor(this.providerName, async (prompt) => {
+      const baseUrl = this.settings.ollamaUrl || "http://localhost:11434";
+      const body = {
+        model: this.settings.ollamaModel || "llama3.1",
+        prompt,
+        stream: false
+      };
+      console.log("Ollama: Request body prepared, size:", JSON.stringify(body).length, "bytes");
+      const response = await (0, import_obsidian.requestUrl)({
+        url: `${baseUrl}/api/generate`,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+      console.log("Ollama: Response received, status:", response.status);
+      if (response.status < 200 || response.status >= 300) {
+        throw response;
+      }
+      return response.json;
     });
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
-    }
-    const data = await response.json();
-    return data.response;
   }
   isConfigured() {
     return Boolean(this.settings.ollamaModel);
@@ -25060,22 +25220,6 @@ To use Ollama:
 4. Configure model name in settings
 
 Local AI models run on your computer - no API key needed!`;
-  }
-  buildPrompt(question, context) {
-    return `You are an Obsidian AI Assistant helping users manage their notes and knowledge base through a chat interface.
-
-WORKSPACE CONTEXT:
-- Vault: ${context.vaultName}
-- Current folder: ${context.folderPath}
-- Current file: ${context.activeFile ? context.activeFile.path : "None"}
-- Current file size: ${context.contentLength} characters
-
-USER QUESTION: ${question}
-
-${context.contextContent ? `CURRENT FILE CONTENT:
-${context.contextContent}` : "No active file currently open."}
-
-Answer conversationally and helpfully, as if in a chat.`;
   }
 };
 
@@ -25288,7 +25432,7 @@ var AIService = class {
 };
 
 // src/commands/command-handler.ts
-var import_obsidian = require("obsidian");
+var import_obsidian2 = require("obsidian");
 var CommandHandler = class {
   constructor(app, aiService, settingsManager, fileHandler) {
     this.app = app;
@@ -25351,14 +25495,14 @@ var CommandHandler = class {
     }
     if (this.fileHandler.isProcessing(file.path)) {
       console.log("Already in progress");
-      new import_obsidian.Notice("AI assistant already in progress for this file");
+      new import_obsidian2.Notice("AI assistant already in progress for this file");
       return;
     }
     try {
       await this.fileHandler.processWorkflow(file);
     } catch (error) {
       console.error("AI assistant workflow error:", error);
-      new import_obsidian.Notice(`AI assistant failed: ${error.message}`);
+      new import_obsidian2.Notice(`AI assistant failed: ${error.message}`);
     }
   }
   /**
@@ -25369,7 +25513,7 @@ var CommandHandler = class {
       await plugin.activateChatView();
     } catch (error) {
       console.error("Failed to open chat:", error);
-      new import_obsidian.Notice("Failed to open AI chat");
+      new import_obsidian2.Notice("Failed to open AI chat");
     }
   }
   /**
@@ -25384,10 +25528,10 @@ var CommandHandler = class {
           view.refresh();
         }
       }
-      new import_obsidian.Notice("Chat history cleared");
+      new import_obsidian2.Notice("Chat history cleared");
     } catch (error) {
       console.error("Failed to clear chat:", error);
-      new import_obsidian.Notice("Failed to clear chat history");
+      new import_obsidian2.Notice("Failed to clear chat history");
     }
   }
   /**
@@ -25398,10 +25542,10 @@ var CommandHandler = class {
       if (question.trim()) {
         try {
           const response = await this.aiService.askQuestion(question);
-          new import_obsidian.Notice("Answer copied to clipboard");
+          new import_obsidian2.Notice("Answer copied to clipboard");
           await navigator.clipboard.writeText(response);
         } catch (error) {
-          new import_obsidian.Notice(`Error: ${error.message}`);
+          new import_obsidian2.Notice(`Error: ${error.message}`);
         }
       }
     });
@@ -25417,7 +25561,7 @@ var CommandHandler = class {
       async (newProvider) => {
         await this.settingsManager.updateSetting("aiProvider", newProvider);
         await this.aiService.refreshProvider();
-        new import_obsidian.Notice(`Switched to ${this.getProviderDisplayName(newProvider)} provider`);
+        new import_obsidian2.Notice(`Switched to ${this.getProviderDisplayName(newProvider)} provider`);
       }
     );
     modal.open();
@@ -25451,7 +25595,7 @@ var CommandHandler = class {
     return names[provider] || provider;
   }
 };
-var QuickQuestionModal = class extends import_obsidian.Modal {
+var QuickQuestionModal = class extends import_obsidian2.Modal {
   constructor(app, onSubmit) {
     super(app);
     this.onSubmit = onSubmit;
@@ -25489,7 +25633,7 @@ var QuickQuestionModal = class extends import_obsidian.Modal {
     contentEl.empty();
   }
 };
-var ProviderSwitchModal = class extends import_obsidian.Modal {
+var ProviderSwitchModal = class extends import_obsidian2.Modal {
   constructor(app, settingsManager, onSwitch) {
     super(app);
     this.settingsManager = settingsManager;
@@ -25531,7 +25675,7 @@ var ProviderSwitchModal = class extends import_obsidian.Modal {
           this.onSwitch(provider.id);
           this.close();
         } else {
-          new import_obsidian.Notice(`Please configure ${provider.name} in settings first`);
+          new import_obsidian2.Notice(`Please configure ${provider.name} in settings first`);
         }
       });
     });
@@ -25543,7 +25687,7 @@ var ProviderSwitchModal = class extends import_obsidian.Modal {
 };
 
 // src/files/file-handler.ts
-var import_obsidian2 = require("obsidian");
+var import_obsidian3 = require("obsidian");
 var FileHandler = class {
   constructor(app, aiService, settingsManager) {
     this.app = app;
@@ -25557,7 +25701,7 @@ var FileHandler = class {
   registerEventHandlers(plugin) {
     plugin.registerEvent(
       this.app.vault.on("modify", (file) => {
-        if (file instanceof import_obsidian2.TFile && file.extension === "md") {
+        if (file instanceof import_obsidian3.TFile && file.extension === "md") {
           console.log("File modified:", file.path);
           this.handleFileModification(file);
         }
@@ -25661,12 +25805,12 @@ ${response}
       );
       await this.app.vault.modify(file, finalContent);
       if (settings.enableNotifications) {
-        new import_obsidian2.Notice("Question answered");
+        new import_obsidian3.Notice("Question answered");
       }
     } catch (error) {
       console.error("AI answer error:", error);
       await this.handleAnswerError(file, error);
-      new import_obsidian2.Notice(`Answer failed: ${error.message}`);
+      new import_obsidian3.Notice(`Answer failed: ${error.message}`);
     }
   }
   /**
@@ -25727,7 +25871,7 @@ ${response}
       return;
     }
     if (this.processingFiles.has(file.path)) {
-      new import_obsidian2.Notice("AI assistant already in progress for this file");
+      new import_obsidian3.Notice("AI assistant already in progress for this file");
       return;
     }
     const prompt = await this.getPromptForFile(file);
@@ -25756,7 +25900,7 @@ ${response}
 ---`;
       await this.app.vault.modify(file, updatedContent);
       if (settings.enableNotifications) {
-        new import_obsidian2.Notice("AI assistant completed");
+        new import_obsidian3.Notice("AI assistant completed");
       }
     } finally {
       this.processingFiles.delete(file.path);
@@ -25772,7 +25916,7 @@ ${response}
     const promptPath = `${folder.path}/prompt.md`;
     if (await this.app.vault.adapter.exists(promptPath)) {
       const promptFile = this.app.vault.getAbstractFileByPath(promptPath);
-      if (promptFile instanceof import_obsidian2.TFile) {
+      if (promptFile instanceof import_obsidian3.TFile) {
         return await this.app.vault.read(promptFile);
       }
     }
@@ -25840,7 +25984,7 @@ ${content}`;
     await this.app.vault.modify(file, `${content}
 
 ${message}`);
-    new import_obsidian2.Notice("No prompt.md found - see note for details");
+    new import_obsidian3.Notice("No prompt.md found - see note for details");
   }
   /**
    * Get provider display name
@@ -27105,8 +27249,8 @@ var StylesManager = class {
 };
 
 // src/settings/settings-tab.ts
-var import_obsidian3 = require("obsidian");
-var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
+var import_obsidian4 = require("obsidian");
+var AIObsidianSettingTab = class extends import_obsidian4.PluginSettingTab {
   constructor(app, plugin, settingsManager) {
     super(app, plugin);
     this.plugin = plugin;
@@ -27128,10 +27272,10 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
     const { containerEl } = this;
     const settings = this.settingsManager.getSettings();
     containerEl.createEl("h3", { text: "General Settings" });
-    new import_obsidian3.Setting(containerEl).setName("Review directory").setDesc("Where to save AI review files").addText((text) => text.setPlaceholder("99-System/Archive/ai-reviews").setValue(settings.reviewDirectory).onChange(async (value) => {
+    new import_obsidian4.Setting(containerEl).setName("Review directory").setDesc("Where to save AI review files").addText((text) => text.setPlaceholder("99-System/Archive/ai-reviews").setValue(settings.reviewDirectory).onChange(async (value) => {
       await this.settingsManager.updateSetting("reviewDirectory", value);
     }));
-    new import_obsidian3.Setting(containerEl).setName("Enable notifications").setDesc("Show notification when AI operations complete").addToggle((toggle) => toggle.setValue(settings.enableNotifications).onChange(async (value) => {
+    new import_obsidian4.Setting(containerEl).setName("Enable notifications").setDesc("Show notification when AI operations complete").addToggle((toggle) => toggle.setValue(settings.enableNotifications).onChange(async (value) => {
       await this.settingsManager.updateSetting("enableNotifications", value);
     }));
   }
@@ -27142,11 +27286,11 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
     const { containerEl } = this;
     const settings = this.settingsManager.getSettings();
     containerEl.createEl("h3", { text: "AI Provider Settings" });
-    new import_obsidian3.Setting(containerEl).setName("AI Provider").setDesc("Choose between CLI or API providers for AI responses").addDropdown((dropdown) => dropdown.addOption("cli", "CLI (Command Line)").addOption("anthropic", "Anthropic API").addOption("openai", "OpenAI API").addOption("openrouter", "OpenRouter API").addOption("ollama", "Ollama (Local)").setValue(settings.aiProvider).onChange(async (value) => {
+    new import_obsidian4.Setting(containerEl).setName("AI Provider").setDesc("Choose between CLI or API providers for AI responses").addDropdown((dropdown) => dropdown.addOption("cli", "CLI (Command Line)").addOption("anthropic", "Anthropic API").addOption("openai", "OpenAI API").addOption("openrouter", "OpenRouter API").addOption("ollama", "Ollama (Local)").setValue(settings.aiProvider).onChange(async (value) => {
       await this.settingsManager.updateSetting("aiProvider", value);
       this.display();
     }));
-    new import_obsidian3.Setting(containerEl).setName("AI CLI path").setDesc("Path to your AI CLI executable (required for CLI provider)").addText((text) => text.setPlaceholder("/usr/local/bin/kiro-cli").setValue(settings.aiCliPath).onChange(async (value) => {
+    new import_obsidian4.Setting(containerEl).setName("AI CLI path").setDesc("Path to your AI CLI executable (required for CLI provider)").addText((text) => text.setPlaceholder("/usr/local/bin/kiro-cli").setValue(settings.aiCliPath).onChange(async (value) => {
       await this.settingsManager.updateSetting("aiCliPath", value);
     }));
     this.addProviderSpecificSettings(settings);
@@ -27158,45 +27302,45 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
     const { containerEl } = this;
     if (settings.aiProvider === "anthropic") {
       containerEl.createEl("h4", { text: "Anthropic Configuration" });
-      new import_obsidian3.Setting(containerEl).setName("Anthropic API Key").setDesc("Your Anthropic API key from https://console.anthropic.com/").addText((text) => text.setPlaceholder("sk-ant-...").setValue(settings.anthropicApiKey).onChange(async (value) => {
+      new import_obsidian4.Setting(containerEl).setName("Anthropic API Key").setDesc("Your Anthropic API key from https://console.anthropic.com/").addText((text) => text.setPlaceholder("sk-ant-...").setValue(settings.anthropicApiKey).onChange(async (value) => {
         await this.settingsManager.updateSetting("anthropicApiKey", value);
       }));
-      new import_obsidian3.Setting(containerEl).setName("Anthropic Model").setDesc("Which Anthropic model to use").addDropdown((dropdown) => dropdown.addOption("claude-3-5-sonnet-20241022", "Claude 3.5 Sonnet").addOption("claude-3-5-haiku-20241022", "Claude 3.5 Haiku").addOption("claude-3-opus-20240229", "Claude 3 Opus").setValue(settings.anthropicModel).onChange(async (value) => {
+      new import_obsidian4.Setting(containerEl).setName("Anthropic Model").setDesc("Which Anthropic model to use").addDropdown((dropdown) => dropdown.addOption("claude-sonnet-4-5", "Claude Sonnet 4.5").addOption("claude-haiku-4-5", "Claude Haiku 4.5").addOption("claude-opus-4-5", "Claude Opus 4.5").addOption("claude-3-5-sonnet-latest", "Claude 3.5 Sonnet (Legacy)").setValue(settings.anthropicModel).onChange(async (value) => {
         await this.settingsManager.updateSetting("anthropicModel", value);
       }));
     }
     if (settings.aiProvider === "openai") {
       containerEl.createEl("h4", { text: "OpenAI Configuration" });
-      new import_obsidian3.Setting(containerEl).setName("OpenAI API Key").setDesc("Your OpenAI API key from https://platform.openai.com/api-keys").addText((text) => text.setPlaceholder("sk-...").setValue(settings.openaiApiKey).onChange(async (value) => {
+      new import_obsidian4.Setting(containerEl).setName("OpenAI API Key").setDesc("Your OpenAI API key from https://platform.openai.com/api-keys").addText((text) => text.setPlaceholder("sk-...").setValue(settings.openaiApiKey).onChange(async (value) => {
         await this.settingsManager.updateSetting("openaiApiKey", value);
       }));
-      new import_obsidian3.Setting(containerEl).setName("OpenAI Model").setDesc("Which OpenAI model to use").addDropdown((dropdown) => dropdown.addOption("gpt-4o", "GPT-4o").addOption("gpt-4o-mini", "GPT-4o Mini").addOption("gpt-4", "GPT-4").addOption("gpt-3.5-turbo", "GPT-3.5 Turbo").setValue(settings.openaiModel).onChange(async (value) => {
+      new import_obsidian4.Setting(containerEl).setName("OpenAI Model").setDesc("Which OpenAI model to use").addDropdown((dropdown) => dropdown.addOption("gpt-4o", "GPT-4o").addOption("gpt-4o-mini", "GPT-4o Mini").addOption("gpt-4", "GPT-4").addOption("gpt-3.5-turbo", "GPT-3.5 Turbo").setValue(settings.openaiModel).onChange(async (value) => {
         await this.settingsManager.updateSetting("openaiModel", value);
       }));
-      new import_obsidian3.Setting(containerEl).setName("API Base URL").setDesc("Custom OpenAI-compatible API endpoint (optional)").addText((text) => text.setPlaceholder("https://api.openai.com/v1").setValue(settings.apiBaseUrl || "").onChange(async (value) => {
+      new import_obsidian4.Setting(containerEl).setName("API Base URL").setDesc("Custom OpenAI-compatible API endpoint (optional)").addText((text) => text.setPlaceholder("https://api.openai.com/v1").setValue(settings.apiBaseUrl || "").onChange(async (value) => {
         await this.settingsManager.updateSetting("apiBaseUrl", value);
       }));
     }
     if (settings.aiProvider === "openrouter") {
       containerEl.createEl("h4", { text: "OpenRouter Configuration" });
-      new import_obsidian3.Setting(containerEl).setName("OpenRouter API Key").setDesc("Your OpenRouter API key from https://openrouter.ai/keys").addText((text) => text.setPlaceholder("sk-or-...").setValue(settings.openrouterApiKey).onChange(async (value) => {
+      new import_obsidian4.Setting(containerEl).setName("OpenRouter API Key").setDesc("Your OpenRouter API key from https://openrouter.ai/keys").addText((text) => text.setPlaceholder("sk-or-...").setValue(settings.openrouterApiKey).onChange(async (value) => {
         await this.settingsManager.updateSetting("openrouterApiKey", value);
       }));
-      new import_obsidian3.Setting(containerEl).setName("OpenRouter Model").setDesc("Choose from 100+ AI models").addDropdown((dropdown) => dropdown.addOption("openai/gpt-4o", "GPT-4o (OpenAI)").addOption("openai/gpt-4o-mini", "GPT-4o Mini (OpenAI)").addOption("anthropic/claude-3.5-sonnet", "Claude 3.5 Sonnet").addOption("anthropic/claude-3.5-haiku", "Claude 3.5 Haiku").addOption("google/gemini-pro-1.5", "Gemini Pro 1.5").addOption("meta-llama/llama-3.1-70b-instruct", "Llama 3.1 70B").addOption("mistralai/mistral-large", "Mistral Large").setValue(settings.openrouterModel).onChange(async (value) => {
+      new import_obsidian4.Setting(containerEl).setName("OpenRouter Model").setDesc("Choose from 100+ AI models").addDropdown((dropdown) => dropdown.addOption("openai/gpt-4o", "GPT-4o (OpenAI)").addOption("openai/gpt-4o-mini", "GPT-4o Mini (OpenAI)").addOption("anthropic/claude-3.5-sonnet", "Claude 3.5 Sonnet").addOption("anthropic/claude-3.5-haiku", "Claude 3.5 Haiku").addOption("google/gemini-pro-1.5", "Gemini Pro 1.5").addOption("meta-llama/llama-3.1-70b-instruct", "Llama 3.1 70B").addOption("mistralai/mistral-large", "Mistral Large").setValue(settings.openrouterModel).onChange(async (value) => {
         await this.settingsManager.updateSetting("openrouterModel", value);
       }));
     }
     if (settings.aiProvider === "ollama") {
       containerEl.createEl("h4", { text: "Ollama Configuration" });
-      new import_obsidian3.Setting(containerEl).setName("Ollama URL").setDesc("URL where Ollama is running").addText((text) => text.setPlaceholder("http://localhost:11434").setValue(settings.ollamaUrl).onChange(async (value) => {
+      new import_obsidian4.Setting(containerEl).setName("Ollama URL").setDesc("URL where Ollama is running").addText((text) => text.setPlaceholder("http://localhost:11434").setValue(settings.ollamaUrl).onChange(async (value) => {
         await this.settingsManager.updateSetting("ollamaUrl", value);
       }));
-      new import_obsidian3.Setting(containerEl).setName("Ollama Model").setDesc("Local AI model to use (must be pulled first)").addDropdown((dropdown) => dropdown.addOption("llama3.1", "Llama 3.1 (8B)").addOption("llama3.1:70b", "Llama 3.1 (70B)").addOption("llama2", "Llama 2 (7B)").addOption("codellama", "Code Llama").addOption("mistral", "Mistral 7B").addOption("phi3", "Phi-3 Mini").addOption("gemma2", "Gemma 2").setValue(settings.ollamaModel).onChange(async (value) => {
+      new import_obsidian4.Setting(containerEl).setName("Ollama Model").setDesc("Local AI model to use (must be pulled first)").addDropdown((dropdown) => dropdown.addOption("llama3.1", "Llama 3.1 (8B)").addOption("llama3.1:70b", "Llama 3.1 (70B)").addOption("llama2", "Llama 2 (7B)").addOption("codellama", "Code Llama").addOption("mistral", "Mistral 7B").addOption("phi3", "Phi-3 Mini").addOption("gemma2", "Gemma 2").setValue(settings.ollamaModel).onChange(async (value) => {
         await this.settingsManager.updateSetting("ollamaModel", value);
       }));
     }
     if (["anthropic", "openai", "openrouter"].includes(settings.aiProvider)) {
-      new import_obsidian3.Setting(containerEl).setName("Max Tokens").setDesc("Maximum tokens for API responses").addText((text) => text.setPlaceholder("4000").setValue(settings.maxTokens.toString()).onChange(async (value) => {
+      new import_obsidian4.Setting(containerEl).setName("Max Tokens").setDesc("Maximum tokens for API responses").addText((text) => text.setPlaceholder("4000").setValue(settings.maxTokens.toString()).onChange(async (value) => {
         const numValue = parseInt(value) || 4e3;
         await this.settingsManager.updateSetting("maxTokens", numValue);
       }));
@@ -27209,10 +27353,10 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
     const { containerEl } = this;
     const settings = this.settingsManager.getSettings();
     containerEl.createEl("h3", { text: "File Trigger Settings" });
-    new import_obsidian3.Setting(containerEl).setName("Trigger keyword").setDesc("Keyword to trigger questions in files (e.g., 'ai what should I do??')").addText((text) => text.setPlaceholder("ai").setValue(settings.triggerKeyword).onChange(async (value) => {
+    new import_obsidian4.Setting(containerEl).setName("Trigger keyword").setDesc("Keyword to trigger questions in files (e.g., 'ai what should I do??')").addText((text) => text.setPlaceholder("ai").setValue(settings.triggerKeyword).onChange(async (value) => {
       await this.settingsManager.updateSetting("triggerKeyword", value);
     }));
-    new import_obsidian3.Setting(containerEl).setName("Question suffix").setDesc("Suffix to trigger questions (e.g., '??' to avoid triggering on single '?')").addText((text) => text.setPlaceholder("??").setValue(settings.questionSuffix).onChange(async (value) => {
+    new import_obsidian4.Setting(containerEl).setName("Question suffix").setDesc("Suffix to trigger questions (e.g., '??' to avoid triggering on single '?')").addText((text) => text.setPlaceholder("??").setValue(settings.questionSuffix).onChange(async (value) => {
       await this.settingsManager.updateSetting("questionSuffix", value);
     }));
   }
@@ -27223,11 +27367,11 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
     const { containerEl } = this;
     const settings = this.settingsManager.getSettings();
     containerEl.createEl("h3", { text: "Interface Settings" });
-    new import_obsidian3.Setting(containerEl).setName("Chat panel side").setDesc("Choose which sidebar to display the AI chat panel").addDropdown((dropdown) => dropdown.addOption("left", "Left sidebar").addOption("right", "Right sidebar").setValue(settings.chatPanelSide).onChange(async (value) => {
+    new import_obsidian4.Setting(containerEl).setName("Chat panel side").setDesc("Choose which sidebar to display the AI chat panel").addDropdown((dropdown) => dropdown.addOption("left", "Left sidebar").addOption("right", "Right sidebar").setValue(settings.chatPanelSide).onChange(async (value) => {
       await this.settingsManager.updateSetting("chatPanelSide", value);
-      new import_obsidian3.Notice("Chat panel side changed. Restart Obsidian or reload the plugin to apply changes.");
+      new import_obsidian4.Notice("Chat panel side changed. Restart Obsidian or reload the plugin to apply changes.");
     }));
-    new import_obsidian3.Setting(containerEl).setName("Chat theme").setDesc("Choose the visual style for the chat interface").addDropdown((dropdown) => dropdown.addOption("default", "Default (Obsidian)").addOption("imessage", "iMessage Style").addOption("minimal", "Minimal").addOption("discord", "Discord Style").setValue(settings.chatTheme).onChange(async (value) => {
+    new import_obsidian4.Setting(containerEl).setName("Chat theme").setDesc("Choose the visual style for the chat interface").addDropdown((dropdown) => dropdown.addOption("default", "Default (Obsidian)").addOption("imessage", "iMessage Style").addOption("minimal", "Minimal").addOption("discord", "Discord Style").setValue(settings.chatTheme).onChange(async (value) => {
       await this.settingsManager.updateSetting("chatTheme", value);
       const plugin = this.plugin;
       if (plugin.stylesManager) {
@@ -27241,7 +27385,7 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
           leaf.view.refresh();
         }
       });
-      new import_obsidian3.Notice("Chat theme changed. Changes applied immediately.");
+      new import_obsidian4.Notice("Chat theme changed. Changes applied immediately.");
     }));
   }
   /**
@@ -27250,7 +27394,7 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
   addAdvancedSettings() {
     const { containerEl } = this;
     containerEl.createEl("h3", { text: "Advanced Settings" });
-    new import_obsidian3.Setting(containerEl).setName("Test Connection").setDesc("Test your current AI provider configuration").addButton((button) => button.setButtonText("Test Connection").setCta().onClick(async () => {
+    new import_obsidian4.Setting(containerEl).setName("Test Connection").setDesc("Test your current AI provider configuration").addButton((button) => button.setButtonText("Test Connection").setCta().onClick(async () => {
       button.setButtonText("Testing...");
       try {
         const plugin = this.plugin;
@@ -27258,16 +27402,16 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
         if (aiService) {
           const result = await aiService.testConnection();
           if (result.success) {
-            new import_obsidian3.Notice("\u2705 Connection successful!");
+            new import_obsidian4.Notice("\u2705 Connection successful!");
             console.log("Test response:", result.response);
           } else {
-            new import_obsidian3.Notice(`\u274C Connection failed: ${result.error}`);
+            new import_obsidian4.Notice(`\u274C Connection failed: ${result.error}`);
           }
         } else {
-          new import_obsidian3.Notice("\u274C AI service not initialized");
+          new import_obsidian4.Notice("\u274C AI service not initialized");
         }
       } catch (error) {
-        new import_obsidian3.Notice(`\u274C Connection failed: ${error.message}`);
+        new import_obsidian4.Notice(`\u274C Connection failed: ${error.message}`);
       } finally {
         button.setButtonText("Test Connection");
       }
@@ -27298,7 +27442,7 @@ var AIObsidianSettingTab = class extends import_obsidian3.PluginSettingTab {
 
 // src/ui/react-chat-view.tsx
 var import_react7 = __toESM(require_react());
-var import_obsidian4 = require("obsidian");
+var import_obsidian5 = require("obsidian");
 var import_client = __toESM(require_client());
 
 // src/react/context.tsx
@@ -27420,7 +27564,117 @@ function DefaultHeader({ name, status = "AI Assistant", buttons = [], contextInf
 
 // src/react/themes/default/Input.tsx
 var import_react2 = __toESM(require_react());
+
+// src/react/utils/Icons.tsx
 var import_jsx_runtime4 = __toESM(require_jsx_runtime());
+var MessageIcon = ({ className = "size-6", size }) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+  "svg",
+  {
+    xmlns: "http://www.w3.org/2000/svg",
+    fill: "none",
+    viewBox: "0 0 24 24",
+    strokeWidth: 1.5,
+    stroke: "currentColor",
+    className,
+    width: size,
+    height: size,
+    children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+      "path",
+      {
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: "M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
+      }
+    )
+  }
+);
+var HistoryIcon = ({ className = "size-6", size }) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+  "svg",
+  {
+    xmlns: "http://www.w3.org/2000/svg",
+    fill: "none",
+    viewBox: "0 0 24 24",
+    strokeWidth: 1.5,
+    stroke: "currentColor",
+    className,
+    width: size,
+    height: size,
+    children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+      "path",
+      {
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: "M5.25 14.25h13.5m-13.5 0a3 3 0 0 1-3-3m3 3a3 3 0 1 0 0 6h13.5a3 3 0 1 0 0-6m-16.5-3a3 3 0 0 1 3-3h13.5a3 3 0 0 1 3 3m-19.5 0a4.5 4.5 0 0 1 .9-2.7L5.737 5.1a3.375 3.375 0 0 1 2.7-1.35h7.126c1.062 0 2.062.5 2.7 1.35l2.587 3.45a4.5 4.5 0 0 1 .9 2.7m0 0a3 3 0 0 1-3 3m0 3h.008v.008h-.008v-.008Zm0-6h.008v.008h-.008v-.008Zm-3 6h.008v.008h-.008v-.008Zm0-6h.008v.008h-.008v-.008Z"
+      }
+    )
+  }
+);
+var SendIcon = ({ className = "size-6", size }) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+  "svg",
+  {
+    xmlns: "http://www.w3.org/2000/svg",
+    fill: "none",
+    viewBox: "0 0 24 24",
+    strokeWidth: 1.5,
+    stroke: "currentColor",
+    className,
+    width: size,
+    height: size,
+    children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+      "path",
+      {
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: "M6 12L3.269 3.126A59.768 59.768 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.876L5.999 12Zm0 0h7.5"
+      }
+    )
+  }
+);
+var EditIcon = ({ className = "size-6", size }) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+  "svg",
+  {
+    xmlns: "http://www.w3.org/2000/svg",
+    fill: "none",
+    viewBox: "0 0 24 24",
+    strokeWidth: 1.5,
+    stroke: "currentColor",
+    className,
+    width: size,
+    height: size,
+    children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+      "path",
+      {
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: "m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+      }
+    )
+  }
+);
+var PlusIcon = ({ className = "size-6", size }) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+  "svg",
+  {
+    xmlns: "http://www.w3.org/2000/svg",
+    fill: "none",
+    viewBox: "0 0 24 24",
+    strokeWidth: 1.5,
+    stroke: "currentColor",
+    className,
+    width: size,
+    height: size,
+    children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+      "path",
+      {
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        d: "M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+      }
+    )
+  }
+);
+
+// src/react/themes/default/Input.tsx
+var import_jsx_runtime5 = __toESM(require_jsx_runtime());
 function DefaultInput({ onSend, placeholder = "Ask me anything...", disabled }) {
   const [message, setMessage] = (0, import_react2.useState)("");
   const handleSend = () => {
@@ -27435,8 +27689,8 @@ function DefaultInput({ onSend, placeholder = "Ask me anything...", disabled }) 
       handleSend();
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "ai-chat-input-container", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "ai-chat-input-container", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
       "textarea",
       {
         className: "ai-chat-input",
@@ -27447,21 +27701,21 @@ function DefaultInput({ onSend, placeholder = "Ask me anything...", disabled }) 
         disabled
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
       "button",
       {
         className: "ai-chat-send-btn",
         onClick: handleSend,
         disabled: !message.trim() || disabled,
         title: disabled ? "Sending message..." : "Send message (Enter)",
-        children: disabled ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "ai-chat-spinner" }) : "\u2708\uFE0F"
+        children: disabled ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "ai-chat-spinner" }) : /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(SendIcon, { className: "size-4" })
       }
     )
   ] });
 }
 
 // src/react/themes/default/HistoryPanel.tsx
-var import_jsx_runtime5 = __toESM(require_jsx_runtime());
+var import_jsx_runtime6 = __toESM(require_jsx_runtime());
 var DefaultHistoryPanel = ({
   conversations,
   searchQuery,
@@ -27479,7 +27733,7 @@ var DefaultHistoryPanel = ({
   formatDate
 }) => {
   const displayedConversations = conversations.slice(0, maxHistoryToShow);
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
     "div",
     {
       style: {
@@ -27501,7 +27755,7 @@ var DefaultHistoryPanel = ({
         boxShadow: "none"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
           "div",
           {
             style: {
@@ -27511,7 +27765,7 @@ var DefaultHistoryPanel = ({
               flexShrink: 0
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
                 "div",
                 {
                   style: {
@@ -27521,7 +27775,7 @@ var DefaultHistoryPanel = ({
                     marginBottom: "16px"
                   },
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
                       "h3",
                       {
                         style: {
@@ -27533,7 +27787,7 @@ var DefaultHistoryPanel = ({
                         children: "Conversation History"
                       }
                     ),
-                    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
                       "button",
                       {
                         onClick: onClose,
@@ -27562,7 +27816,7 @@ var DefaultHistoryPanel = ({
                   ]
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { marginBottom: "16px" }, children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { style: { marginBottom: "16px" }, children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
                 "input",
                 {
                   type: "text",
@@ -27581,8 +27835,8 @@ var DefaultHistoryPanel = ({
                   }
                 }
               ) }),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { display: "flex", gap: "8px" }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { display: "flex", gap: "8px" }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
                   "button",
                   {
                     onClick: onNewConversation,
@@ -27608,12 +27862,12 @@ var DefaultHistoryPanel = ({
                       e.currentTarget.style.background = "var(--interactive-accent)";
                     },
                     children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
+                      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
                       "New Chat"
                     ]
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+                /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
                   "button",
                   {
                     onClick: onClearAllConversations,
@@ -27643,7 +27897,7 @@ var DefaultHistoryPanel = ({
                       }
                     },
                     children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) }),
+                      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) }),
                       "Clear All"
                     ]
                   }
@@ -27652,7 +27906,7 @@ var DefaultHistoryPanel = ({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
           "div",
           {
             style: {
@@ -27660,7 +27914,7 @@ var DefaultHistoryPanel = ({
               overflow: "auto",
               background: "var(--background-primary)"
             },
-            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
               "div",
               {
                 style: {
@@ -27669,7 +27923,7 @@ var DefaultHistoryPanel = ({
                   color: "var(--text-muted)"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
                     "div",
                     {
                       style: {
@@ -27686,7 +27940,7 @@ var DefaultHistoryPanel = ({
                   "Loading conversations..."
                 ]
               }
-            ) : error ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+            ) : error ? /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
               "div",
               {
                 style: {
@@ -27695,8 +27949,8 @@ var DefaultHistoryPanel = ({
                   color: "var(--text-error)"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { style: { margin: "0 0 16px" }, children: error }),
-                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { style: { margin: "0 0 16px" }, children: error }),
+                  /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
                     "button",
                     {
                       onClick: onRetry,
@@ -27714,7 +27968,7 @@ var DefaultHistoryPanel = ({
                   )
                 ]
               }
-            ) : displayedConversations.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+            ) : displayedConversations.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
               "div",
               {
                 style: {
@@ -27724,8 +27978,8 @@ var DefaultHistoryPanel = ({
                 },
                 children: searchQuery ? "No conversations match your search." : "No saved conversations yet."
               }
-            ) : /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { width: "100%" }, children: [
-              displayedConversations.map((conv) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+            ) : /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { width: "100%" }, children: [
+              displayedConversations.map((conv) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
                 "div",
                 {
                   onClick: () => onSelectConversation(conv.id),
@@ -27749,9 +28003,9 @@ var DefaultHistoryPanel = ({
                       e.currentTarget.style.background = "transparent";
                     }
                   },
-                  children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { display: "flex", alignItems: "flex-start", justifyContent: "space-between" }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                  children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { display: "flex", alignItems: "flex-start", justifyContent: "space-between" }, children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
                         "h4",
                         {
                           style: {
@@ -27766,7 +28020,7 @@ var DefaultHistoryPanel = ({
                           children: conv.name
                         }
                       ),
-                      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+                      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
                         "div",
                         {
                           style: {
@@ -27777,14 +28031,14 @@ var DefaultHistoryPanel = ({
                             color: "var(--text-muted)"
                           },
                           children: [
-                            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: formatDate(conv.updatedAt) }),
-                            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: "\u2022" }),
-                            /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("span", { children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { children: formatDate(conv.updatedAt) }),
+                            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { children: "\u2022" }),
+                            /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { children: [
                               conv.messageCount,
                               " messages"
                             ] }),
-                            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: "\u2022" }),
-                            /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("span", { children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { children: "\u2022" }),
+                            /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { children: [
                               conv.wordCount,
                               " words"
                             ] })
@@ -27792,7 +28046,7 @@ var DefaultHistoryPanel = ({
                         }
                       )
                     ] }),
-                    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
                       "button",
                       {
                         onClick: (e) => onDeleteConversation(conv.id, e),
@@ -27815,14 +28069,14 @@ var DefaultHistoryPanel = ({
                           e.currentTarget.style.background = "none";
                         },
                         title: "Delete conversation",
-                        children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) })
+                        children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) })
                       }
                     )
                   ] })
                 },
                 conv.id
               )),
-              conversations.length > maxHistoryToShow && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+              conversations.length > maxHistoryToShow && /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
                 "div",
                 {
                   style: {
@@ -27863,13 +28117,13 @@ var defaultTheme = {
 };
 
 // src/react/themes/imessage/Bubble.tsx
-var import_jsx_runtime6 = __toESM(require_jsx_runtime());
+var import_jsx_runtime7 = __toESM(require_jsx_runtime());
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 function iMessageBubble({ message, isUser, timestamp }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: cn("flex flex-col gap-1", isUser ? "items-end" : "items-start"), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: cn("flex flex-col gap-1", isUser ? "items-end" : "items-start"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
       "div",
       {
         className: cn(
@@ -27879,23 +28133,23 @@ function iMessageBubble({ message, isUser, timestamp }) {
         children: message
       }
     ),
-    timestamp && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "text-[11px] text-muted-foreground px-2", children: timestamp })
+    timestamp && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "text-[11px] text-muted-foreground px-2", children: timestamp })
   ] });
 }
 
 // src/react/themes/imessage/Header.tsx
-var import_jsx_runtime7 = __toESM(require_jsx_runtime());
+var import_jsx_runtime8 = __toESM(require_jsx_runtime());
 function iMessageHeader({ name, status = "AI Assistant", buttons = [], contextInfo }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex flex-col border-b border-border bg-background/80 backdrop-blur-xl", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center justify-between px-4 py-3", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "h-10 w-10 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] text-white text-sm font-medium flex items-center justify-center", children: name.slice(0, 2).toUpperCase() }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex flex-col", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "font-semibold text-[15px] text-foreground", children: name }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "text-[12px] text-muted-foreground", children: status })
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex flex-col border-b border-border bg-background/80 backdrop-blur-xl", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex items-center justify-between px-4 py-3", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "h-10 w-10 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] text-white text-sm font-medium flex items-center justify-center", children: name.slice(0, 2).toUpperCase() }),
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex flex-col", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "font-semibold text-[15px] text-foreground", children: name }),
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "text-[12px] text-muted-foreground", children: status })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "flex items-center gap-1", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "flex items-center gap-1", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
         "button",
         {
           onClick: button.onClick,
@@ -27903,21 +28157,21 @@ function iMessageHeader({ name, status = "AI Assistant", buttons = [], contextIn
           title: button.tooltip || button.label,
           className: `text-sm font-medium px-3 py-1 rounded transition-colors ${button.variant === "primary" ? "bg-[#007AFF] text-white hover:bg-[#0066CC]" : button.variant === "danger" ? "bg-red-500 text-white hover:bg-red-600" : "text-[#007AFF] hover:text-[#0066CC] hover:bg-gray-100 dark:hover:bg-gray-700"}`,
           children: [
-            button.icon && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "mr-1", children: button.icon }),
-            button.label
+            button.icon,
+            button.label && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "ml-1", children: button.label })
           ]
         },
         button.id
       )) })
     ] }),
-    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "px-4 pb-3", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "flex items-center gap-2 text-[11px] text-muted-foreground", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { children: [
+    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "px-4 pb-3", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "flex items-center gap-2 text-[11px] text-muted-foreground", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { children: [
         contextInfo.currentWords.toLocaleString(),
         "/",
         contextInfo.maxWords.toLocaleString(),
         " words"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "flex-1 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "flex-1 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
         "div",
         {
           className: "h-full transition-all duration-500 rounded-full",
@@ -27927,7 +28181,7 @@ function iMessageHeader({ name, status = "AI Assistant", buttons = [], contextIn
           }
         }
       ) }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { children: [
         contextInfo.percentage.toFixed(0),
         "%"
       ] })
@@ -27937,7 +28191,7 @@ function iMessageHeader({ name, status = "AI Assistant", buttons = [], contextIn
 
 // src/react/themes/imessage/Input.tsx
 var import_react3 = __toESM(require_react());
-var import_jsx_runtime8 = __toESM(require_jsx_runtime());
+var import_jsx_runtime9 = __toESM(require_jsx_runtime());
 function cn2(...classes) {
   return classes.filter(Boolean).join(" ");
 }
@@ -27955,8 +28209,8 @@ function MessageInput({ onSend, placeholder = "Message", disabled }) {
       handleSend();
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "flex items-end gap-3 p-4 border-t border-border bg-background/80 backdrop-blur-xl", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "relative flex-1 min-h-[42px]", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "flex items-end gap-3 p-4 border-t border-border bg-background/80 backdrop-blur-xl", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "relative flex-1 min-h-[42px]", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       "textarea",
       {
         value: message,
@@ -27984,7 +28238,7 @@ function MessageInput({ onSend, placeholder = "Message", disabled }) {
         }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       "button",
       {
         onClick: handleSend,
@@ -27997,14 +28251,14 @@ function MessageInput({ onSend, placeholder = "Message", disabled }) {
           top: "50%",
           transform: "translateY(-50%)"
         },
-        children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", strokeWidth: 2, children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
+        children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", strokeWidth: 2, children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
       }
     )
   ] }) });
 }
 
 // src/react/themes/imessage/HistoryPanel.tsx
-var import_jsx_runtime9 = __toESM(require_jsx_runtime());
+var import_jsx_runtime10 = __toESM(require_jsx_runtime());
 var iMessageHistoryPanel = ({
   conversations,
   searchQuery,
@@ -28049,7 +28303,7 @@ var iMessageHistoryPanel = ({
     }
     return conv.name;
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
     "div",
     {
       style: {
@@ -28072,7 +28326,7 @@ var iMessageHistoryPanel = ({
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif'
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
           "div",
           {
             style: {
@@ -28084,7 +28338,7 @@ var iMessageHistoryPanel = ({
               minHeight: "60px"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
                 "button",
                 {
                   onClick: onClose,
@@ -28101,12 +28355,12 @@ var iMessageHistoryPanel = ({
                     gap: "6px"
                   },
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("polyline", { points: "15,18 9,12 15,6" }) }),
+                    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("polyline", { points: "15,18 9,12 15,6" }) }),
                     "Back"
                   ]
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
                 "h1",
                 {
                   style: {
@@ -28119,7 +28373,7 @@ var iMessageHistoryPanel = ({
                   children: "Conversations"
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
                 "button",
                 {
                   onClick: onNewConversation,
@@ -28136,13 +28390,13 @@ var iMessageHistoryPanel = ({
                     alignItems: "center",
                     justifyContent: "center"
                   },
-                  children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("path", { d: "M12 5v14M5 12h14" }) })
+                  children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("path", { d: "M12 5v14M5 12h14" }) })
                 }
               )
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
           "div",
           {
             style: {
@@ -28150,7 +28404,7 @@ var iMessageHistoryPanel = ({
               overflow: "auto",
               background: "var(--background-primary)"
             },
-            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
               "div",
               {
                 style: {
@@ -28159,7 +28413,7 @@ var iMessageHistoryPanel = ({
                   color: "var(--text-muted)"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
                     "div",
                     {
                       style: {
@@ -28173,10 +28427,10 @@ var iMessageHistoryPanel = ({
                       }
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { fontSize: "17px" }, children: "Loading..." })
+                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: { fontSize: "17px" }, children: "Loading..." })
                 ]
               }
-            ) : error ? /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+            ) : error ? /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
               "div",
               {
                 style: {
@@ -28185,8 +28439,8 @@ var iMessageHistoryPanel = ({
                   color: "var(--text-error)"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { style: { margin: "0 0 20px", fontSize: "17px" }, children: error }),
-                  /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { style: { margin: "0 0 20px", fontSize: "17px" }, children: error }),
+                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
                     "button",
                     {
                       onClick: onRetry,
@@ -28205,7 +28459,7 @@ var iMessageHistoryPanel = ({
                   )
                 ]
               }
-            ) : displayedConversations.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+            ) : displayedConversations.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
               "div",
               {
                 style: {
@@ -28214,7 +28468,7 @@ var iMessageHistoryPanel = ({
                   color: "var(--text-muted)"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
                     "div",
                     {
                       style: {
@@ -28227,15 +28481,15 @@ var iMessageHistoryPanel = ({
                         justifyContent: "center",
                         margin: "0 auto 20px"
                       },
-                      children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("svg", { width: "40", height: "40", viewBox: "0 0 24 24", fill: "white", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("path", { d: "M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" }) })
+                      children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("svg", { width: "40", height: "40", viewBox: "0 0 24 24", fill: "white", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("path", { d: "M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" }) })
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { style: { fontSize: "17px", margin: "0 0 8px", fontWeight: "500" }, children: "No Messages" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { style: { fontSize: "15px", margin: 0, opacity: 0.7 }, children: searchQuery ? "No conversations match your search" : "Start a conversation to see messages here" })
+                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { style: { fontSize: "17px", margin: "0 0 8px", fontWeight: "500" }, children: "No Messages" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { style: { fontSize: "15px", margin: 0, opacity: 0.7 }, children: searchQuery ? "No conversations match your search" : "Start a conversation to see messages here" })
                 ]
               }
-            ) : /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { width: "100%" }, children: [
-              displayedConversations.map((conv, index) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+            ) : /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: { width: "100%" }, children: [
+              displayedConversations.map((conv, index) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
                 "div",
                 {
                   onClick: () => onSelectConversation(conv.id),
@@ -28259,8 +28513,8 @@ var iMessageHistoryPanel = ({
                       e.currentTarget.style.background = "transparent";
                     }
                   },
-                  children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", alignItems: "flex-start", gap: "15px" }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                  children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: { display: "flex", alignItems: "flex-start", gap: "15px" }, children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
                       "div",
                       {
                         style: {
@@ -28279,9 +28533,9 @@ var iMessageHistoryPanel = ({
                         children: "AI"
                       }
                     ),
-                    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "2px" }, children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { display: "flex", alignItems: "center", gap: "6px", flex: 1, minWidth: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "2px" }, children: [
+                        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: { display: "flex", alignItems: "center", gap: "6px", flex: 1, minWidth: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
                           "h3",
                           {
                             style: {
@@ -28296,8 +28550,8 @@ var iMessageHistoryPanel = ({
                             children: conv.name
                           }
                         ) }),
-                        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: "8px" }, children: [
-                          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: "8px" }, children: [
+                          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
                             "span",
                             {
                               style: {
@@ -28308,7 +28562,7 @@ var iMessageHistoryPanel = ({
                               children: formatiOSDate(conv.updatedAt)
                             }
                           ),
-                          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
                             "button",
                             {
                               onClick: (e) => {
@@ -28339,12 +28593,12 @@ var iMessageHistoryPanel = ({
                                 e.currentTarget.style.opacity = "0.5";
                               },
                               title: "Delete",
-                              children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) })
+                              children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) })
                             }
                           )
                         ] })
                       ] }),
-                      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
                         "p",
                         {
                           style: {
@@ -28364,7 +28618,7 @@ var iMessageHistoryPanel = ({
                 },
                 conv.id
               )),
-              conversations.length > maxHistoryToShow && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+              conversations.length > maxHistoryToShow && /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
                 "div",
                 {
                   style: {
@@ -28404,13 +28658,13 @@ var imessageTheme = {
 };
 
 // src/react/themes/minimal/Bubble.tsx
-var import_jsx_runtime10 = __toESM(require_jsx_runtime());
+var import_jsx_runtime11 = __toESM(require_jsx_runtime());
 function cn3(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 function MinimalBubble({ message, isUser, timestamp }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: cn3("flex flex-col gap-1", isUser ? "items-end" : "items-start"), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: cn3("flex flex-col gap-1", isUser ? "items-end" : "items-start"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
       "div",
       {
         className: cn3(
@@ -28420,23 +28674,23 @@ function MinimalBubble({ message, isUser, timestamp }) {
         children: message
       }
     ),
-    timestamp && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: "text-xs text-gray-500 px-1", children: timestamp })
+    timestamp && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "text-xs text-gray-500 px-1", children: timestamp })
   ] });
 }
 
 // src/react/themes/minimal/Header.tsx
-var import_jsx_runtime11 = __toESM(require_jsx_runtime());
+var import_jsx_runtime12 = __toESM(require_jsx_runtime());
 function MinimalHeader({ name, status = "AI Assistant", buttons = [], contextInfo }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex flex-col border-b border-gray-200 dark:border-gray-700", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex items-center justify-between px-4 py-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "w-2 h-2 rounded-full bg-green-500" }),
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex flex-col", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "text-sm font-medium text-gray-700 dark:text-gray-300", children: name }),
-          status && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "text-xs text-gray-500 dark:text-gray-400", children: status })
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex flex-col border-b border-gray-200 dark:border-gray-700", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex items-center justify-between px-4 py-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "w-2 h-2 rounded-full bg-green-500" }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex flex-col", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "text-sm font-medium text-gray-700 dark:text-gray-300", children: name }),
+          status && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "text-xs text-gray-500 dark:text-gray-400", children: status })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "flex items-center gap-1", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "flex items-center gap-1", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
         "button",
         {
           onClick: button.onClick,
@@ -28444,21 +28698,21 @@ function MinimalHeader({ name, status = "AI Assistant", buttons = [], contextInf
           title: button.tooltip || button.label,
           className: `px-2 py-1 text-xs rounded transition-colors ${button.variant === "primary" ? "bg-blue-500 text-white hover:bg-blue-600" : button.variant === "danger" ? "bg-red-500 text-white hover:bg-red-600" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`,
           children: [
-            button.icon && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "mr-1", children: button.icon }),
+            button.icon && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "mr-1", children: button.icon }),
             button.label
           ]
         },
         button.id
       )) })
     ] }),
-    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "px-4 pb-2", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { children: [
+    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "px-4 pb-2", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("span", { children: [
         contextInfo.currentWords.toLocaleString(),
         "/",
         contextInfo.maxWords.toLocaleString(),
         " words"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "flex-1 h-1 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "flex-1 h-1 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
         "div",
         {
           className: "h-full transition-all duration-300 rounded-full",
@@ -28468,7 +28722,7 @@ function MinimalHeader({ name, status = "AI Assistant", buttons = [], contextInf
           }
         }
       ) }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("span", { children: [
         contextInfo.percentage.toFixed(0),
         "%"
       ] })
@@ -28478,7 +28732,7 @@ function MinimalHeader({ name, status = "AI Assistant", buttons = [], contextInf
 
 // src/react/themes/minimal/Input.tsx
 var import_react4 = __toESM(require_react());
-var import_jsx_runtime12 = __toESM(require_jsx_runtime());
+var import_jsx_runtime13 = __toESM(require_jsx_runtime());
 function MinimalInput({ onSend, placeholder = "Type a message...", disabled }) {
   const [message, setMessage] = (0, import_react4.useState)("");
   const handleSend = () => {
@@ -28493,8 +28747,8 @@ function MinimalInput({ onSend, placeholder = "Type a message...", disabled }) {
       handleSend();
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex items-center gap-2 p-3 border-t border-gray-200 dark:border-gray-700", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: "flex items-center gap-2 p-3 border-t border-gray-200 dark:border-gray-700", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
       "textarea",
       {
         value: message,
@@ -28510,7 +28764,7 @@ function MinimalInput({ onSend, placeholder = "Type a message...", disabled }) {
         }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
       "button",
       {
         onClick: handleSend,
@@ -28523,7 +28777,7 @@ function MinimalInput({ onSend, placeholder = "Type a message...", disabled }) {
 }
 
 // src/react/themes/minimal/HistoryPanel.tsx
-var import_jsx_runtime13 = __toESM(require_jsx_runtime());
+var import_jsx_runtime14 = __toESM(require_jsx_runtime());
 var MinimalHistoryPanel = ({
   conversations,
   searchQuery,
@@ -28541,7 +28795,7 @@ var MinimalHistoryPanel = ({
   formatDate
 }) => {
   const displayedConversations = conversations.slice(0, maxHistoryToShow);
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
     "div",
     {
       style: {
@@ -28563,7 +28817,7 @@ var MinimalHistoryPanel = ({
         boxShadow: "none"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
           "div",
           {
             style: {
@@ -28573,7 +28827,7 @@ var MinimalHistoryPanel = ({
               flexShrink: 0
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
                 "div",
                 {
                   style: {
@@ -28583,7 +28837,7 @@ var MinimalHistoryPanel = ({
                     marginBottom: "12px"
                   },
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                       "h3",
                       {
                         style: {
@@ -28597,7 +28851,7 @@ var MinimalHistoryPanel = ({
                         children: "History"
                       }
                     ),
-                    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                       "button",
                       {
                         onClick: onClose,
@@ -28623,7 +28877,7 @@ var MinimalHistoryPanel = ({
                   ]
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { marginBottom: "12px" }, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { marginBottom: "12px" }, children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                 "input",
                 {
                   type: "text",
@@ -28642,8 +28896,8 @@ var MinimalHistoryPanel = ({
                   }
                 }
               ) }),
-              /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { display: "flex", gap: "6px" }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { display: "flex", gap: "6px" }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
                   "button",
                   {
                     onClick: onNewConversation,
@@ -28669,12 +28923,12 @@ var MinimalHistoryPanel = ({
                       e.currentTarget.style.background = "transparent";
                     },
                     children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
+                      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
                       "New"
                     ]
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+                /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
                   "button",
                   {
                     onClick: onClearAllConversations,
@@ -28706,7 +28960,7 @@ var MinimalHistoryPanel = ({
                       }
                     },
                     children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) }),
+                      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) }),
                       "Clear"
                     ]
                   }
@@ -28715,7 +28969,7 @@ var MinimalHistoryPanel = ({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
           "div",
           {
             style: {
@@ -28723,7 +28977,7 @@ var MinimalHistoryPanel = ({
               overflow: "auto",
               background: "var(--background-primary)"
             },
-            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
               "div",
               {
                 style: {
@@ -28732,7 +28986,7 @@ var MinimalHistoryPanel = ({
                   color: "var(--text-muted)"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                     "div",
                     {
                       style: {
@@ -28746,10 +29000,10 @@ var MinimalHistoryPanel = ({
                       }
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { style: { fontSize: "12px" }, children: "Loading..." })
+                  /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { fontSize: "12px" }, children: "Loading..." })
                 ]
               }
-            ) : error ? /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+            ) : error ? /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
               "div",
               {
                 style: {
@@ -28758,8 +29012,8 @@ var MinimalHistoryPanel = ({
                   color: "var(--text-error)"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("p", { style: { margin: "0 0 8px", fontSize: "12px" }, children: error }),
-                  /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { style: { margin: "0 0 8px", fontSize: "12px" }, children: error }),
+                  /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                     "button",
                     {
                       onClick: onRetry,
@@ -28777,7 +29031,7 @@ var MinimalHistoryPanel = ({
                   )
                 ]
               }
-            ) : displayedConversations.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+            ) : displayedConversations.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
               "div",
               {
                 style: {
@@ -28788,8 +29042,8 @@ var MinimalHistoryPanel = ({
                 },
                 children: searchQuery ? "No matches" : "No conversations"
               }
-            ) : /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { width: "100%" }, children: [
-              displayedConversations.map((conv) => /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+            ) : /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { width: "100%" }, children: [
+              displayedConversations.map((conv) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                 "div",
                 {
                   onClick: () => onSelectConversation(conv.id),
@@ -28813,9 +29067,9 @@ var MinimalHistoryPanel = ({
                       e.currentTarget.style.background = "transparent";
                     }
                   },
-                  children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                  children: /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                         "h4",
                         {
                           style: {
@@ -28830,7 +29084,7 @@ var MinimalHistoryPanel = ({
                           children: conv.name
                         }
                       ),
-                      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+                      /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
                         "div",
                         {
                           style: {
@@ -28841,14 +29095,14 @@ var MinimalHistoryPanel = ({
                             gap: "8px"
                           },
                           children: [
-                            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { children: formatDate(conv.updatedAt) }),
-                            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { children: "\u2022" }),
-                            /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("span", { children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: formatDate(conv.updatedAt) }),
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: "\u2022" }),
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { children: [
                               conv.messageCount,
                               "msg"
                             ] }),
-                            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { children: "\u2022" }),
-                            /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("span", { children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: "\u2022" }),
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { children: [
                               conv.wordCount,
                               "w"
                             ] })
@@ -28856,7 +29110,7 @@ var MinimalHistoryPanel = ({
                         }
                       )
                     ] }),
-                    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                       "button",
                       {
                         onClick: (e) => onDeleteConversation(conv.id, e),
@@ -28876,14 +29130,14 @@ var MinimalHistoryPanel = ({
                           e.currentTarget.style.color = "var(--text-faint)";
                         },
                         title: "Delete",
-                        children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) })
+                        children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) })
                       }
                     )
                   ] })
                 },
                 conv.id
               )),
-              conversations.length > maxHistoryToShow && /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+              conversations.length > maxHistoryToShow && /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
                 "div",
                 {
                   style: {
@@ -28971,13 +29225,13 @@ AvatarGenerator.colors = [
 AvatarGenerator.avatarCache = /* @__PURE__ */ new Map();
 
 // src/react/themes/discord/Bubble.tsx
-var import_jsx_runtime14 = __toESM(require_jsx_runtime());
+var import_jsx_runtime15 = __toESM(require_jsx_runtime());
 function DiscordBubble({ message, isUser, timestamp }) {
   const userAvatar = AvatarGenerator.generateAvatar("user", "You");
   const aiAvatar = AvatarGenerator.generateAvatar("ai-assistant", "AI Assistant");
   const avatar = isUser ? userAvatar : aiAvatar;
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "flex gap-4 py-2 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded-md", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "flex gap-4 py-2 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded-md", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
       "div",
       {
         className: "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm",
@@ -28985,28 +29239,28 @@ function DiscordBubble({ message, isUser, timestamp }) {
         children: avatar.initials
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "flex-1 min-w-0", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "flex items-baseline gap-3 mb-1", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "font-semibold text-gray-900 dark:text-gray-100 text-sm", children: isUser ? "You" : "AI Assistant" }),
-        timestamp && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "text-xs text-gray-500 dark:text-gray-400 font-medium", children: timestamp })
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "flex-1 min-w-0", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "flex items-baseline gap-3 mb-1", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "font-semibold text-gray-900 dark:text-gray-100 text-sm", children: isUser ? "You" : "AI Assistant" }),
+        timestamp && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "text-xs text-gray-500 dark:text-gray-400 font-medium", children: timestamp })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: "text-gray-800 dark:text-gray-200 text-sm leading-relaxed pr-4", children: message })
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "text-gray-800 dark:text-gray-200 text-sm leading-relaxed pr-4", children: message })
     ] })
   ] });
 }
 
 // src/react/themes/discord/Header.tsx
-var import_jsx_runtime15 = __toESM(require_jsx_runtime());
+var import_jsx_runtime16 = __toESM(require_jsx_runtime());
 function DiscordHeader({ name, status = "AI Assistant", buttons = [], contextInfo }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "flex flex-col bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "flex items-center justify-between px-4 py-3", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "flex items-center gap-3", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "text-gray-600 dark:text-gray-400 text-lg", children: "#" }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "font-semibold text-gray-900 dark:text-gray-100", children: name }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "w-px h-6 bg-gray-300 dark:bg-gray-600" }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "text-sm text-gray-500 dark:text-gray-400", children: status })
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "flex flex-col bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "flex items-center justify-between px-4 py-3", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "flex items-center gap-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "text-gray-600 dark:text-gray-400 text-lg", children: "#" }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "font-semibold text-gray-900 dark:text-gray-100", children: name }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "w-px h-6 bg-gray-300 dark:bg-gray-600" }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "text-sm text-gray-500 dark:text-gray-400", children: status })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "flex items-center gap-1", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "flex items-center gap-1", children: buttons.map((button) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
         "button",
         {
           onClick: button.onClick,
@@ -29014,21 +29268,21 @@ function DiscordHeader({ name, status = "AI Assistant", buttons = [], contextInf
           title: button.tooltip || button.label,
           className: `text-sm px-3 py-1.5 rounded transition-colors font-medium ${button.variant === "primary" ? "bg-blue-600 text-white hover:bg-blue-700" : button.variant === "danger" ? "bg-red-600 text-white hover:bg-red-700" : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"}`,
           children: [
-            button.icon && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: "mr-1", children: button.icon }),
-            button.label
+            button.icon,
+            button.label && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: "ml-1", children: button.label })
           ]
         },
         button.id
       )) })
     ] }),
-    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "px-4 pb-3", children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { children: [
+    contextInfo && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "px-4 pb-3", children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("span", { children: [
         contextInfo.currentWords.toLocaleString(),
         "/",
         contextInfo.maxWords.toLocaleString(),
         " words"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "flex-1 h-1.5 bg-gray-300 dark:bg-gray-600 rounded overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: "flex-1 h-1.5 bg-gray-300 dark:bg-gray-600 rounded overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
         "div",
         {
           className: "h-full transition-all duration-300 rounded",
@@ -29038,7 +29292,7 @@ function DiscordHeader({ name, status = "AI Assistant", buttons = [], contextInf
           }
         }
       ) }),
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("span", { children: [
         contextInfo.percentage.toFixed(0),
         "%"
       ] })
@@ -29048,7 +29302,7 @@ function DiscordHeader({ name, status = "AI Assistant", buttons = [], contextInf
 
 // src/react/themes/discord/Input.tsx
 var import_react5 = __toESM(require_react());
-var import_jsx_runtime16 = __toESM(require_jsx_runtime());
+var import_jsx_runtime17 = __toESM(require_jsx_runtime());
 function DiscordInput({ onSend, placeholder = "Message #ai-assistant", disabled }) {
   const [message, setMessage] = (0, import_react5.useState)("");
   const handleSend = () => {
@@ -29063,8 +29317,8 @@ function DiscordInput({ onSend, placeholder = "Message #ai-assistant", disabled 
       handleSend();
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: "flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: "flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
       "textarea",
       {
         value: message,
@@ -29085,20 +29339,20 @@ function DiscordInput({ onSend, placeholder = "Message #ai-assistant", disabled 
         }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
       "button",
       {
         onClick: handleSend,
         disabled: !message.trim() || disabled,
         className: "p-2.5 rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex-shrink-0",
-        children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", strokeWidth: 2, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
+        children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", strokeWidth: 2, children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" }) })
       }
     )
   ] });
 }
 
 // src/react/themes/discord/HistoryPanel.tsx
-var import_jsx_runtime17 = __toESM(require_jsx_runtime());
+var import_jsx_runtime18 = __toESM(require_jsx_runtime());
 var DiscordHistoryPanel = ({
   conversations,
   searchQuery,
@@ -29116,7 +29370,7 @@ var DiscordHistoryPanel = ({
   formatDate
 }) => {
   const displayedConversations = conversations.slice(0, maxHistoryToShow);
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
     "div",
     {
       style: {
@@ -29139,7 +29393,7 @@ var DiscordHistoryPanel = ({
         fontFamily: '"Segoe UI", system-ui, sans-serif'
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
           "div",
           {
             style: {
@@ -29152,8 +29406,8 @@ var DiscordHistoryPanel = ({
               justifyContent: "space-between"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: "12px" }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: "12px" }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
                   "div",
                   {
                     style: {
@@ -29165,10 +29419,10 @@ var DiscordHistoryPanel = ({
                       alignItems: "center",
                       justifyContent: "center"
                     },
-                    children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "white", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { d: "M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.197.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z" }) })
+                    children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "white", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("path", { d: "M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.197.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z" }) })
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
                   "h3",
                   {
                     style: {
@@ -29181,7 +29435,7 @@ var DiscordHistoryPanel = ({
                   }
                 )
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
                 "button",
                 {
                   onClick: onClose,
@@ -29211,7 +29465,7 @@ var DiscordHistoryPanel = ({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { padding: "16px", borderBottom: "1px solid var(--background-modifier-border)" }, children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { padding: "16px", borderBottom: "1px solid var(--background-modifier-border)" }, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
           "input",
           {
             type: "text",
@@ -29230,8 +29484,8 @@ var DiscordHistoryPanel = ({
             }
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { padding: "16px", borderBottom: "1px solid var(--background-modifier-border)", display: "flex", gap: "8px" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: { padding: "16px", borderBottom: "1px solid var(--background-modifier-border)", display: "flex", gap: "8px" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
             "button",
             {
               onClick: onNewConversation,
@@ -29258,12 +29512,12 @@ var DiscordHistoryPanel = ({
                 e.currentTarget.style.background = "#5865f2";
               },
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
                 "New Chat"
               ]
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
             "button",
             {
               onClick: onClearAllConversations,
@@ -29294,13 +29548,13 @@ var DiscordHistoryPanel = ({
                 }
               },
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) }),
                 "Clear All"
               ]
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
           "div",
           {
             style: {
@@ -29308,7 +29562,7 @@ var DiscordHistoryPanel = ({
               overflow: "auto",
               background: "var(--background-primary)"
             },
-            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
               "div",
               {
                 style: {
@@ -29317,7 +29571,7 @@ var DiscordHistoryPanel = ({
                   color: "var(--text-muted)"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
                     "div",
                     {
                       style: {
@@ -29334,7 +29588,7 @@ var DiscordHistoryPanel = ({
                   "Loading..."
                 ]
               }
-            ) : error ? /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+            ) : error ? /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
               "div",
               {
                 style: {
@@ -29343,8 +29597,8 @@ var DiscordHistoryPanel = ({
                   color: "#ed4245"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("p", { style: { margin: "0 0 16px" }, children: error }),
-                  /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("p", { style: { margin: "0 0 16px" }, children: error }),
+                  /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
                     "button",
                     {
                       onClick: onRetry,
@@ -29362,7 +29616,7 @@ var DiscordHistoryPanel = ({
                   )
                 ]
               }
-            ) : displayedConversations.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+            ) : displayedConversations.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
               "div",
               {
                 style: {
@@ -29371,7 +29625,7 @@ var DiscordHistoryPanel = ({
                   color: "var(--text-muted)"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
                     "div",
                     {
                       style: {
@@ -29384,14 +29638,14 @@ var DiscordHistoryPanel = ({
                         justifyContent: "center",
                         margin: "0 auto 16px"
                       },
-                      children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("svg", { width: "24", height: "24", viewBox: "0 0 24 24", fill: "white", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { d: "M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" }) })
+                      children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("svg", { width: "24", height: "24", viewBox: "0 0 24 24", fill: "white", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("path", { d: "M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" }) })
                     }
                   ),
                   searchQuery ? "No conversations match your search." : "No saved conversations yet."
                 ]
               }
-            ) : /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { width: "100%" }, children: [
-              displayedConversations.map((conv) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+            ) : /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: { width: "100%" }, children: [
+              displayedConversations.map((conv) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
                 "div",
                 {
                   onClick: () => onSelectConversation(conv.id),
@@ -29415,8 +29669,8 @@ var DiscordHistoryPanel = ({
                       e.currentTarget.style.background = "transparent";
                     }
                   },
-                  children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: "12px" }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                  children: /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: "12px" }, children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
                       "div",
                       {
                         style: {
@@ -29435,8 +29689,8 @@ var DiscordHistoryPanel = ({
                         children: "AI"
                       }
                     ),
-                    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
                         "h4",
                         {
                           style: {
@@ -29451,7 +29705,7 @@ var DiscordHistoryPanel = ({
                           children: conv.name
                         }
                       ),
-                      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+                      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
                         "div",
                         {
                           style: {
@@ -29462,14 +29716,14 @@ var DiscordHistoryPanel = ({
                             gap: "8px"
                           },
                           children: [
-                            /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { children: formatDate(conv.updatedAt) }),
-                            /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { width: "3px", height: "3px", borderRadius: "50%", background: "currentColor" } }),
-                            /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { children: formatDate(conv.updatedAt) }),
+                            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { width: "3px", height: "3px", borderRadius: "50%", background: "currentColor" } }),
+                            /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("span", { children: [
                               conv.messageCount,
                               " messages"
                             ] }),
-                            /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { width: "3px", height: "3px", borderRadius: "50%", background: "currentColor" } }),
-                            /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: { width: "3px", height: "3px", borderRadius: "50%", background: "currentColor" } }),
+                            /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("span", { children: [
                               conv.wordCount,
                               " words"
                             ] })
@@ -29477,7 +29731,7 @@ var DiscordHistoryPanel = ({
                         }
                       )
                     ] }),
-                    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
                       "button",
                       {
                         onClick: (e) => onDeleteConversation(conv.id, e),
@@ -29500,14 +29754,14 @@ var DiscordHistoryPanel = ({
                           e.currentTarget.style.background = "none";
                         },
                         title: "Delete conversation",
-                        children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) })
+                        children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("path", { d: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" }) })
                       }
                     )
                   ] })
                 },
                 conv.id
               )),
-              conversations.length > maxHistoryToShow && /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+              conversations.length > maxHistoryToShow && /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
                 "div",
                 {
                   style: {
@@ -29785,7 +30039,7 @@ var ConversationManager = class {
 };
 
 // src/react/ChatInterface.tsx
-var import_jsx_runtime18 = __toESM(require_jsx_runtime());
+var import_jsx_runtime19 = __toESM(require_jsx_runtime());
 var ChatInterface = () => {
   const [messages, setMessages] = (0, import_react6.useState)([]);
   const [isProcessing, setIsProcessing] = (0, import_react6.useState)(false);
@@ -30098,7 +30352,7 @@ var ChatInterface = () => {
       baseButtons.push({
         id: "new-chat",
         label: "",
-        icon: "\u270F\uFE0F",
+        icon: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(EditIcon, { className: "size-5" }),
         onClick: startNewChat,
         variant: "primary",
         tooltip: "New message"
@@ -30107,7 +30361,7 @@ var ChatInterface = () => {
       baseButtons.push({
         id: "new-chat",
         label: "",
-        icon: "\u{1F4AC}",
+        icon: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(MessageIcon, { className: "size-5" }),
         onClick: startNewChat,
         variant: "primary",
         tooltip: "New chat"
@@ -30125,7 +30379,7 @@ var ChatInterface = () => {
       baseButtons.push({
         id: "new-chat",
         label: "",
-        icon: "\u2795",
+        icon: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(PlusIcon, { className: "size-5" }),
         onClick: startNewChat,
         variant: "primary",
         tooltip: "Start a new conversation"
@@ -30135,7 +30389,7 @@ var ChatInterface = () => {
       baseButtons.push({
         id: "history",
         label: "",
-        icon: "\u{1F550}",
+        icon: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(HistoryIcon, { className: "size-5" }),
         onClick: toggleHistory,
         variant: "secondary",
         tooltip: showHistoryPanel ? "Close" : "History"
@@ -30144,7 +30398,7 @@ var ChatInterface = () => {
       baseButtons.push({
         id: "history",
         label: "",
-        icon: "\u{1F4DC}",
+        icon: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(HistoryIcon, { className: "size-5" }),
         onClick: toggleHistory,
         variant: "secondary",
         tooltip: showHistoryPanel ? "Close history" : "Message history"
@@ -30162,7 +30416,7 @@ var ChatInterface = () => {
       baseButtons.push({
         id: "history",
         label: "",
-        icon: "\u{1F4DA}",
+        icon: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(HistoryIcon, { className: "size-5" }),
         onClick: toggleHistory,
         variant: "secondary",
         tooltip: showHistoryPanel ? "Close conversation history" : "View conversation history"
@@ -30175,7 +30429,7 @@ var ChatInterface = () => {
   const themeProvider = ThemeProvider.getInstance();
   const themeComponents = themeProvider.getComponents(currentTheme);
   if (showHistoryPanel) {
-    return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`, children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
       themeComponents.HistoryPanel,
       {
         conversations: conversations.filter(
@@ -30197,8 +30451,8 @@ var ChatInterface = () => {
       }
     ) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-container" : `ai-chat-container-${currentTheme}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
       themeComponents.Header,
       {
         name: "AI Assistant",
@@ -30207,12 +30461,12 @@ var ChatInterface = () => {
         contextInfo: settings.enableContextTracking ? contextInfo : void 0
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-messages" : `ai-chat-messages-${currentTheme}`, children: [
-      messages.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: "flex flex-col items-center justify-center h-full text-center text-muted-foreground", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: "w-16 h-16 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] flex items-center justify-center mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: "text-2xl text-white", children: "\u{1F4AC}" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("p", { className: "text-sm", children: "No messages yet" }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("p", { className: "text-xs mt-1", children: "Start the conversation!" })
-      ] }) : messages.map((message) => /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: currentTheme === "default" ? "ai-chat-messages" : `ai-chat-messages-${currentTheme}`, children: [
+      messages.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: "flex flex-col items-center justify-center h-full text-center text-muted-foreground", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: "w-16 h-16 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] flex items-center justify-center mb-4", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(MessageIcon, { className: "size-8 text-white" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("p", { className: "text-sm", children: "No messages yet" }),
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("p", { className: "text-xs mt-1", children: "Start the conversation!" })
+      ] }) : messages.map((message) => /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
         themeComponents.Bubble,
         {
           message: message.isThinking ? "Thinking..." : message.content,
@@ -30221,9 +30475,9 @@ var ChatInterface = () => {
         },
         message.id
       )),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { ref: messagesEndRef })
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { ref: messagesEndRef })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
       themeComponents.Input,
       {
         onSend: handleSendMessage,
@@ -30235,9 +30489,9 @@ var ChatInterface = () => {
 };
 
 // src/ui/react-chat-view.tsx
-var import_jsx_runtime19 = __toESM(require_jsx_runtime());
+var import_jsx_runtime20 = __toESM(require_jsx_runtime());
 var VIEW_TYPE_AI_CHAT = "ai-chat-view";
-var ReactChatView = class extends import_obsidian4.ItemView {
+var ReactChatView = class extends import_obsidian5.ItemView {
   constructor(leaf, aiService, settingsManager, stylesManager) {
     super(leaf);
     this.aiService = aiService;
@@ -30258,13 +30512,13 @@ var ReactChatView = class extends import_obsidian4.ItemView {
     console.log("Opening React chat view...");
     this.root = (0, import_client.createRoot)(this.contentEl);
     this.root.render(
-      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_react7.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(import_react7.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
         ContextProviders,
         {
           app: this.app,
           aiService: this.aiService,
           settingsManager: this.settingsManager,
-          children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ChatInterface, {})
+          children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(ChatInterface, {})
         }
       ) })
     );
@@ -30283,13 +30537,13 @@ var ReactChatView = class extends import_obsidian4.ItemView {
       const settings = this.settingsManager.getSettings();
       const themeKey = `chat-${settings.chatTheme}-${Date.now()}`;
       this.root.render(
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_react7.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(import_react7.StrictMode, { children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
           ContextProviders,
           {
             app: this.app,
             aiService: this.aiService,
             settingsManager: this.settingsManager,
-            children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ChatInterface, {}, themeKey)
+            children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(ChatInterface, {}, themeKey)
           }
         ) })
       );
@@ -30298,7 +30552,7 @@ var ReactChatView = class extends import_obsidian4.ItemView {
 };
 
 // src/main.ts
-var AIObsidianPlugin = class extends import_obsidian5.Plugin {
+var AIObsidianPlugin = class extends import_obsidian6.Plugin {
   async onload() {
     console.log("\u{1F916} AI Obsidian Assistant - Loading complete plugin with React...");
     try {

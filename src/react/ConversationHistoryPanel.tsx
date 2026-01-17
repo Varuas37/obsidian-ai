@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp, useSettings } from './context';
 import { ConversationManager, ConversationMetadata } from '../core/conversation-manager';
+import { DeleteIcon, PlusIcon } from './utils/Icons';
 
 interface ConversationHistoryPanelProps {
   onSelectConversation: (conversationId: string) => void;
@@ -228,7 +229,10 @@ export const ConversationHistoryPanel: React.FC<ConversationHistoryPanelProps> =
               e.currentTarget.style.background = 'var(--interactive-accent)';
             }}
           >
-            ➕ New Chat
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <PlusIcon className="size-4" />
+              New Chat
+            </div>
           </button>
           <button
             onClick={handleClearAllConversations}
@@ -254,7 +258,10 @@ export const ConversationHistoryPanel: React.FC<ConversationHistoryPanelProps> =
               }
             }}
           >
-            🗑️ Clear All
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <DeleteIcon className="size-4" />
+              Clear All
+            </div>
           </button>
         </div>
       </div>
@@ -402,7 +409,7 @@ export const ConversationHistoryPanel: React.FC<ConversationHistoryPanelProps> =
                     }}
                     title="Delete conversation"
                   >
-                    🗑️
+                    <DeleteIcon className="size-4" />
                   </button>
                 </div>
               </div>

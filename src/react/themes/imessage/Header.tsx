@@ -36,8 +36,8 @@ export function iMessageHeader({ name, status = "AI Assistant", buttons = [], co
                   : 'text-[#007AFF] hover:text-[#0066CC] hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
-              {button.icon && <span className="mr-1">{button.icon}</span>}
-              {button.label}
+              {button.icon}
+              {button.label && <span className="ml-1">{button.label}</span>}
             </button>
           ))}
         </div>

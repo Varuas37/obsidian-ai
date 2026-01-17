@@ -4,6 +4,7 @@ import { ThemeProvider, ThemeName } from './themes';
 import { HeaderButton, ContextInfo } from './themes/types';
 import { ConversationManager, StoredMessage } from '../core/conversation-manager';
 import { ConversationHistoryPanel } from './ConversationHistoryPanel';
+import { MessageIcon, HistoryIcon, EditIcon, PlusIcon } from './utils/Icons';
 
 interface Message {
   id: string;
@@ -442,7 +443,7 @@ export const ChatInterface: React.FC = () => {
       baseButtons.push({
         id: 'new-chat',
         label: '',
-        icon: '✏️',
+        icon: <EditIcon className="size-5" />,
         onClick: startNewChat,
         variant: 'primary',
         tooltip: 'New message'
@@ -451,7 +452,7 @@ export const ChatInterface: React.FC = () => {
       baseButtons.push({
         id: 'new-chat',
         label: '',
-        icon: '💬',
+        icon: <MessageIcon className="size-5" />,
         onClick: startNewChat,
         variant: 'primary',
         tooltip: 'New chat'
@@ -469,7 +470,7 @@ export const ChatInterface: React.FC = () => {
       baseButtons.push({
         id: 'new-chat',
         label: '',
-        icon: '➕',
+        icon: <PlusIcon className="size-5" />,
         onClick: startNewChat,
         variant: 'primary',
         tooltip: 'Start a new conversation'
@@ -481,7 +482,7 @@ export const ChatInterface: React.FC = () => {
       baseButtons.push({
         id: 'history',
         label: '',
-        icon: '🕐',
+        icon: <HistoryIcon className="size-5" />,
         onClick: toggleHistory,
         variant: 'secondary',
         tooltip: showHistoryPanel ? 'Close' : 'History'
@@ -490,7 +491,7 @@ export const ChatInterface: React.FC = () => {
       baseButtons.push({
         id: 'history',
         label: '',
-        icon: '📜',
+        icon: <HistoryIcon className="size-5" />,
         onClick: toggleHistory,
         variant: 'secondary',
         tooltip: showHistoryPanel ? 'Close history' : 'Message history'
@@ -508,7 +509,7 @@ export const ChatInterface: React.FC = () => {
       baseButtons.push({
         id: 'history',
         label: '',
-        icon: '📚',
+        icon: <HistoryIcon className="size-5" />,
         onClick: toggleHistory,
         variant: 'secondary',
         tooltip: showHistoryPanel ? 'Close conversation history' : 'View conversation history'
@@ -564,7 +565,7 @@ export const ChatInterface: React.FC = () => {
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] flex items-center justify-center mb-4">
-              <span className="text-2xl text-white">💬</span>
+              <MessageIcon className="size-8 text-white" />
             </div>
             <p className="text-sm">No messages yet</p>
             <p className="text-xs mt-1">Start the conversation!</p>

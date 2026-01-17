@@ -117,9 +117,10 @@ export class AIObsidianSettingTab extends PluginSettingTab {
         .setName("Anthropic Model")
         .setDesc("Which Anthropic model to use")
         .addDropdown((dropdown) => dropdown
-          .addOption("claude-3-5-sonnet-20241022", "Claude 3.5 Sonnet")
-          .addOption("claude-3-5-haiku-20241022", "Claude 3.5 Haiku")
-          .addOption("claude-3-opus-20240229", "Claude 3 Opus")
+          .addOption("claude-sonnet-4-5", "Claude Sonnet 4.5")
+          .addOption("claude-haiku-4-5", "Claude Haiku 4.5")
+          .addOption("claude-opus-4-5", "Claude Opus 4.5")
+          .addOption("claude-3-5-sonnet-latest", "Claude 3.5 Sonnet (Legacy)")
           .setValue(settings.anthropicModel)
           .onChange(async (value) => {
             await this.settingsManager.updateSetting('anthropicModel', value);

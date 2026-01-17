@@ -1,5 +1,6 @@
 import React, { useState, KeyboardEvent } from 'react';
 import { ChatInputProps } from '../types';
+import { SendIcon } from '../../utils/Icons';
 
 export function DefaultInput({ onSend, placeholder = "Ask me anything...", disabled }: ChatInputProps) {
   const [message, setMessage] = useState("");
@@ -37,7 +38,7 @@ export function DefaultInput({ onSend, placeholder = "Ask me anything...", disab
         {disabled ? (
           <div className="ai-chat-spinner"></div>
         ) : (
-          '✈️'
+          <SendIcon className="size-4" />
         )}
       </button>
     </div>
